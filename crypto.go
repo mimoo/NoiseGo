@@ -24,7 +24,7 @@ import (
 const (
 	dhLen    = 32 // A constant specifying the size in bytes of public keys and DH outputs. For security reasons, dhLen must be 32 or greater.
 	hashLen  = 32
-	blockLen = 64 // change this
+	blockLen = 64
 )
 
 // 4.1. DH functions

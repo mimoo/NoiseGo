@@ -33,7 +33,7 @@ func (c cipherState) hasKey() bool {
 	return false
 }
 
-func (c *cipherState) encryptWithAd(ad, plaintext []byte) (ciphertext []byte, err error) {
+func (c *cipherState) EncryptWithAd(ad, plaintext []byte) (ciphertext []byte, err error) {
 
 	//  If incrementing n results in 2^64-1, then any further encryptWithAd() call will signal an error to the caller
 	if c.n == math.MaxUint64 {
@@ -54,7 +54,7 @@ func (c *cipherState) encryptWithAd(ad, plaintext []byte) (ciphertext []byte, er
 	return
 }
 
-func (c *cipherState) decryptWithAd(ad, ciphertext []byte) (plaintext []byte, err error) {
+func (c *cipherState) DecryptWithAd(ad, ciphertext []byte) (plaintext []byte, err error) {
 
 	//  If incrementing n results in 2^64-1, then any further decryptWithAd() call will signal an error to the caller
 	if c.n == math.MaxUint64 {
@@ -82,7 +82,7 @@ func (c *cipherState) decryptWithAd(ad, ciphertext []byte) (plaintext []byte, er
 	return
 }
 
-func (c *cipherState) rekey() {
+func (c *cipherState) Rekey() {
 	c.k = rekey(c.k)
 }
 
@@ -143,7 +143,7 @@ func (s *symmetricState) mixKeyAndHash(inputKeyMaterial []byte) {
 func (s *symmetricState) encryptAndHash(plaintext []byte) (ciphertext []byte) {
 
 	// Note that if k is empty, the encryptWithAd() call will set ciphertext equal to plaintext.
-	ciphertext, err := s.cipherState.encryptWithAd(s.h[:], plaintext)
+	ciphertext, err := s.cipherState.EncryptWithAd(s.h[:], plaintext)
 
 	// TODO: this should probably kill the session instead (nonce reached maximum size)
 	if err != nil {
@@ -159,7 +159,7 @@ func (s *symmetricState) encryptAndHash(plaintext []byte) (ciphertext []byte) {
 func (s *symmetricState) decryptAndHash(ciphertext []byte) (plaintext []byte) {
 
 	// Note that if k is empty, the decryptWithAd() call will set plaintext equal to ciphertext.
-	plaintext, err := s.cipherState.decryptWithAd(s.h[:], ciphertext)
+	plaintext, err := s.cipherState.DecryptWithAd(s.h[:], ciphertext)
 
 	// TODO: handle this gracefuly! Could be nonce problem or mac problem
 	if err != nil {
