@@ -17,32 +17,24 @@ import (
 	"golang.org/x/crypto/curve25519"
 )
 
+//
+// The following code defines the X25519, chacha20poly1305, SHA-256 suite.
+//
+
 const (
-	dhLen = 32 // A constant specifying the size in bytes of public keys and DH outputs. For security reasons, dhLen must be 32 or greater.
+	dhLen    = 32 // A constant specifying the size in bytes of public keys and DH outputs. For security reasons, dhLen must be 32 or greater.
+	hashLen  = 32
+	blockLen = 64 // change this
 )
 
-// TODO: transform this into an interface for modularity?
-type crypto interface {
-	generateKeypair()
-	dh(keyPair, publicKey [32]byte) (shared [32]byte)
-	encrypt(k, n, ad, plaintext []byte) (ciphertext []byte)
-	decrypt(k, n, ad, ciphertext []byte) (plaintext []byte, err error)
-	rekey(k [32]byte) (newkey [32]byte, err error)
-	hash(data []byte) [32]byte
-	hmacHash(key, data []byte) []byte
-	hkdf(chainingKey, inputKeyMaterial []byte, numOutputs int) (output []byte)
-}
-
-//
 // 4.1. DH functions
-//
 
 type keyPair struct {
 	privateKey [32]byte
 	publicKey  [32]byte
 }
 
-func generateKeypair() (keyPair keyPair) {
+func GenerateKeypair() (keyPair keyPair) {
 
 	if _, err := rand.Read(keyPair.privateKey[:]); err != nil {
 		// TODO: panic here really?
@@ -61,9 +53,7 @@ func dh(keyPair keyPair, publicKey [32]byte) (shared [32]byte) {
 	return
 }
 
-//
 // 4.2. Cipher functions
-//
 
 func encrypt(k [32]byte, n uint64, ad, plaintext []byte) (ciphertext []byte) {
 
@@ -74,7 +64,7 @@ func encrypt(k [32]byte, n uint64, ad, plaintext []byte) (ciphertext []byte) {
 
 	var nonce [8]byte
 	binary.BigEndian.PutUint64(nonce[:], n)
-	ciphertext = cipher.Seal(nil, nonce[:], plaintext, ad)
+	ciphertext = cipher.Seal(nil, append([]byte{0, 0, 0, 0}, nonce[:]...), plaintext, ad)
 
 	return
 }
@@ -88,7 +78,7 @@ func decrypt(k [32]byte, n uint64, ad, ciphertext []byte) (plaintext []byte, err
 
 	var nonce [8]byte
 	binary.BigEndian.PutUint64(nonce[:], n)
-	plaintext, err = cipher.Open(plaintext, nonce[:], ciphertext, ad)
+	plaintext, err = cipher.Open(nil, append([]byte{0, 0, 0, 0}, nonce[:]...), ciphertext, ad)
 	return
 }
 
@@ -99,14 +89,7 @@ func rekey(k [32]byte) (newkey [32]byte) {
 	return
 }
 
-//
 // 4.3. Hash functions
-//
-
-const (
-	hashLen  = 32
-	blockLen = 64 // change this
-)
 
 func hash(data []byte) [32]byte {
 	return sha256.Sum256(data)
@@ -133,10 +116,11 @@ func hkdf(chainingKey, inputKeyMaterial []byte, numOutputs int) (output []byte) 
 	// return
 	tempKey := hmacHash(chainingKey, inputKeyMaterial)
 	output = hmacHash(tempKey, []byte{0x01})
-	output = hmacHash(tempKey, append(output, 0x02))
+	output = append(output, hmacHash(tempKey, append(output, 0x02))...)
+
 	if numOutputs == 2 {
 		return
 	}
-	output = hmacHash(tempKey, append(output, 0x03))
+	output = append(output, hmacHash(tempKey, append(output, 0x03))...)
 	return
 }

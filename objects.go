@@ -117,7 +117,6 @@ func (s *symmetricState) mixKey(inputKeyMaterial [32]byte) {
 	copy(s.ck[:], output[:hashLen])
 
 	// The output of HKDF is taken as is because we use hashLen = 32
-
 	s.cipherState.initializeKey(output[hashLen:])
 
 }
@@ -139,6 +138,8 @@ func (s *symmetricState) mixKeyAndHash(inputKeyMaterial []byte) {
 	s.cipherState.initializeKey(output[hashLen*2:])
 }
 
+// encrypts the plaintext and authenticates the hash
+// then insert the ciphertext in the running hash
 func (s *symmetricState) encryptAndHash(plaintext []byte) (ciphertext []byte) {
 
 	// Note that if k is empty, the encryptWithAd() call will set ciphertext equal to plaintext.
@@ -154,10 +155,11 @@ func (s *symmetricState) encryptAndHash(plaintext []byte) (ciphertext []byte) {
 	return
 }
 
-func (s *symmetricState) decryptAndHash(ciphertext []byte) (plaintext []byte, err error) {
+// decrypts the ciphertext and authenticates the hash
+func (s *symmetricState) decryptAndHash(ciphertext []byte) (plaintext []byte) {
 
 	// Note that if k is empty, the decryptWithAd() call will set plaintext equal to ciphertext.
-	plaintext, err = s.cipherState.decryptWithAd(s.h[:], ciphertext)
+	plaintext, err := s.cipherState.decryptWithAd(s.h[:], ciphertext)
 
 	// TODO: handle this gracefuly! Could be nonce problem or mac problem
 	if err != nil {
@@ -217,7 +219,9 @@ type handshakeState struct {
 	messagePattern []string // A sequence of message patterns. Each message pattern is a sequence of tokens from the set ("e", "s", "ee", "es", "se", "ss")
 }
 
-func (h *handshakeState) Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, rs, re keyPair) {
+var EmptyKey = keyPair{}
+
+func Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, rs, re *keyPair) (h handshakeState) {
 	if _, ok := patterns[handshakePattern]; !ok {
 		panic("the supplied handshakePattern does not exist")
 	}
@@ -226,10 +230,18 @@ func (h *handshakeState) Initialize(handshakePattern string, initiator bool, pro
 
 	h.symmetricState.mixHash(prologue)
 
-	h.s = s
-	h.e = e
-	h.rs = rs
-	h.re = re
+	if s != nil {
+		h.s = *s
+	}
+	if e != nil {
+		h.e = *e
+	}
+	if rs != nil {
+		h.rs = *rs
+	}
+	if re != nil {
+		h.re = *re
+	}
 	h.initiator = initiator
 
 	//Calls MixHash() once for each public key listed in the pre-messages from handshake_pattern, with the specified public key as input (see Section 7 for an explanation of pre-messages). If both initiator and responder have pre-messages, the initiator's public keys are hashed first.
@@ -243,10 +255,15 @@ func (h *handshakeState) Initialize(handshakePattern string, initiator bool, pro
 	}
 
 	h.messagePattern = patterns[handshakePattern].messagePattern
+
+	return
 }
 
-func (h *handshakeState) WriteMessage(payload, messageBuffer []byte) (c1 cipherState, c2 cipherState) {
+func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1 cipherState, c2 cipherState) {
 	// example: h.messagePattern[0] = "->e,se,ss"
+	if len(h.messagePattern) == 0 {
+		panic("no more message pattern to write")
+	}
 	patterns := strings.Split(h.messagePattern[0][2:], ",")
 
 	// process the patterns
@@ -255,11 +272,11 @@ func (h *handshakeState) WriteMessage(payload, messageBuffer []byte) (c1 cipherS
 		pattern = strings.Trim(pattern, " ")
 
 		if pattern == "e" {
-			h.e = generateKeypair()
-			messageBuffer = append(messageBuffer, h.e.publicKey[:]...)
+			h.e = GenerateKeypair()
+			*messageBuffer = append(*messageBuffer, h.e.publicKey[:]...)
 			h.symmetricState.mixHash(h.e.publicKey[:])
 		} else if pattern == "s" {
-			messageBuffer = append(messageBuffer, h.symmetricState.encryptAndHash(h.s.publicKey[:])...)
+			*messageBuffer = append(*messageBuffer, h.symmetricState.encryptAndHash(h.s.publicKey[:])...)
 		} else if pattern == "ee" {
 			h.symmetricState.mixKey(dh(h.e, h.re.publicKey))
 		} else if pattern == "es" {
@@ -282,7 +299,7 @@ func (h *handshakeState) WriteMessage(payload, messageBuffer []byte) (c1 cipherS
 	}
 
 	// Appends EncryptAndHash(payload) to the buffer
-	messageBuffer = append(messageBuffer, h.symmetricState.encryptAndHash(payload)...)
+	*messageBuffer = append(*messageBuffer, h.symmetricState.encryptAndHash(payload)...)
 
 	// remove the pattern from the messagePattern
 	if len(h.messagePattern) == 1 {
@@ -295,4 +312,63 @@ func (h *handshakeState) WriteMessage(payload, messageBuffer []byte) (c1 cipherS
 	return
 }
 
-func (h *handshakeState) ReadMessage(message, payloadBuffer []byte) {}
+func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 cipherState, c2 cipherState) {
+	// example: h.messagePattern[0] = "->e,se,ss"
+	if len(h.messagePattern) == 0 {
+		panic("no more message pattern to read")
+	}
+	patterns := strings.Split(h.messagePattern[0][2:], ",")
+
+	// process the patterns
+	offset := 0
+
+	for _, pattern := range patterns {
+
+		pattern = strings.Trim(pattern, " ")
+
+		if pattern == "e" {
+			copy(h.re.publicKey[:], message[offset:offset+dhLen])
+			offset += dhLen
+			h.symmetricState.mixHash(h.re.publicKey[:])
+		} else if pattern == "s" {
+			tagLen := 0
+			if h.symmetricState.cipherState.hasKey() {
+				tagLen = 16
+			}
+
+			copy(h.rs.publicKey[:], h.symmetricState.decryptAndHash(message[offset:offset+dhLen+tagLen]))
+			offset += dhLen + tagLen
+		} else if pattern == "ee" {
+			h.symmetricState.mixKey(dh(h.e, h.re.publicKey))
+		} else if pattern == "es" {
+			if h.initiator {
+				h.symmetricState.mixKey(dh(h.e, h.rs.publicKey))
+			} else {
+				h.symmetricState.mixKey(dh(h.s, h.re.publicKey))
+			}
+		} else if pattern == "se" {
+			if h.initiator {
+				h.symmetricState.mixKey(dh(h.s, h.re.publicKey))
+			} else {
+				h.symmetricState.mixKey(dh(h.e, h.rs.publicKey))
+			}
+		} else if pattern == "ss" {
+			h.symmetricState.mixKey(dh(h.s, h.rs.publicKey))
+		} else {
+			panic("pattern not allowed")
+		}
+	}
+
+	// Appends EncryptAndHash(payload) to the buffer
+	*payloadBuffer = append(*payloadBuffer, h.symmetricState.decryptAndHash(message[offset:])...)
+
+	// remove the pattern from the messagePattern
+	if len(h.messagePattern) == 1 {
+		// If there are no more message patterns returns two new CipherState objects
+		h.messagePattern = nil
+		c1, c2 = h.symmetricState.Split()
+	} else {
+		h.messagePattern = h.messagePattern[1:]
+	}
+	return
+}
