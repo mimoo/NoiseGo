@@ -121,18 +121,18 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 			h.strobeState.KEY(dh(h.e, h.re.publicKey))
 		} else if pattern == "es" {
 			if h.initiator {
-				h.strobeState.AD(false, dh(h.e, h.rs.publicKey))
+				h.strobeState.KEY(dh(h.e, h.rs.publicKey))
 			} else {
-				h.strobeState.AD(false, dh(h.s, h.re.publicKey))
+				h.strobeState.KEY(dh(h.s, h.re.publicKey))
 			}
 		} else if pattern == "se" {
 			if h.initiator {
-				h.strobeState.AD(false, dh(h.s, h.re.publicKey))
+				h.strobeState.KEY(dh(h.s, h.re.publicKey))
 			} else {
-				h.strobeState.AD(false, dh(h.e, h.rs.publicKey))
+				h.strobeState.KEY(dh(h.e, h.rs.publicKey))
 			}
 		} else if pattern == "ss" {
-			h.strobeState.AD(false, dh(h.s, h.rs.publicKey))
+			h.strobeState.KEY(dh(h.s, h.rs.publicKey))
 		} else {
 			panic("pattern not allowed")
 		}
@@ -141,6 +141,7 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 	// Appends EncryptAndHash(payload) to the buffer
 	*messageBuffer = append(*messageBuffer, h.strobeState.Send_ENC(false, payload)...)
 	*messageBuffer = append(*messageBuffer, h.strobeState.Send_MAC(false, 16)...)
+	fmt.Println("sending encrypted last buffer", messageBuffer)
 
 	// remove the pattern from the messagePattern
 	if len(h.messagePattern) == 1 {
@@ -192,30 +193,32 @@ func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 
 				// TODO: fail gracefuly
 				panic("bad MAC")
 			}
+
 			offset += 16
 
 		} else if pattern == "ee" {
-			h.strobeState.AD(false, dh(h.e, h.re.publicKey))
+			h.strobeState.KEY(dh(h.e, h.re.publicKey))
 		} else if pattern == "es" {
 			if h.initiator {
-				h.strobeState.AD(false, dh(h.e, h.rs.publicKey))
+				h.strobeState.KEY(dh(h.e, h.rs.publicKey))
 			} else {
-				h.strobeState.AD(false, dh(h.s, h.re.publicKey))
+				h.strobeState.KEY(dh(h.s, h.re.publicKey))
 			}
 		} else if pattern == "se" {
 			if h.initiator {
-				h.strobeState.AD(false, dh(h.s, h.re.publicKey))
+				h.strobeState.KEY(dh(h.s, h.re.publicKey))
 			} else {
-				h.strobeState.AD(false, dh(h.e, h.rs.publicKey))
+				h.strobeState.KEY(dh(h.e, h.rs.publicKey))
 			}
 		} else if pattern == "ss" {
-			h.strobeState.AD(false, dh(h.s, h.rs.publicKey))
+			h.strobeState.KEY(dh(h.s, h.rs.publicKey))
 		} else {
 			panic("pattern not allowed")
 		}
 	}
 
 	// Appends EncryptAndHash(payload) to the buffer
+	fmt.Println("receiving encrypted data", message[offset:])
 	*payloadBuffer = append(*payloadBuffer, h.strobeState.Recv_ENC(false, message[offset:len(message)-16])...)
 	if !h.strobeState.Recv_MAC(false, message[len(message)-16:]) {
 		// TODO: fail gracefuly

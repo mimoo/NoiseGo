@@ -7,6 +7,11 @@ import (
 )
 
 func main() {
+	fmt.Println("\n==== START =====\n")
+	fmt.Println("\n==== START =====\n")
+	fmt.Println("\n==== START =====\n")
+	fmt.Println("\n==== START =====\n")
+	fmt.Println("\n==== START =====\n")
 
 	// init
 	initiatorKey := disco.GenerateKeypair()
@@ -18,37 +23,49 @@ func main() {
 	var bufferInitiator, bufferResponder []byte
 
 	// 1. initiator "->e" - sends a pubkey in clear + "salut" in clear.
+	fmt.Println("\n==== initiator ->e =====\n")
 	initiator.WriteMessage([]byte("salut"), &bufferInitiator)
 
 	// 1. responder "->e" - receives the public key, decrypts "salut"
+	fmt.Println("\n==== responder ->e =====\n")
 
 	responder.ReadMessage(bufferInitiator, &bufferResponder)
 	fmt.Printf("responder is receiving in clear: %s\n", bufferResponder)
 
 	// 2. responder "<-e, ee, s, es" - sends a public key in clear, DH, sends a static key encrypted
+	fmt.Println("\n==== responder <-e, ee, s, es =====\n")
 	bufferResponder = bufferResponder[:0]
 	responder.WriteMessage([]byte("ca va?"), &bufferResponder)
 
 	// 2. initiator "<-e, ee, s, es" -
+	fmt.Println("\n==== initiator <-e, ee, s, es =====\n")
 	bufferInitiator = bufferInitiator[:0]
 	initiator.ReadMessage(bufferResponder, &bufferInitiator)
 	fmt.Printf("initiator is receiving encrypted: %s\n", bufferInitiator)
 
 	// 3. "->s, se" - send last trip
+	fmt.Println("\n==== initiator ->s, se =====\n")
 	bufferInitiator = bufferInitiator[:0]
 	initiatorCipherWrite, _ := initiator.WriteMessage([]byte("oui et toi?"), &bufferInitiator)
 
 	// 3. "->s, se" - receive last trip
+	fmt.Println("\n==== responder ->s, se =====\n")
 	bufferResponder = bufferResponder[:0]
 	responderCipherRead, _ := responder.ReadMessage(bufferInitiator, &bufferResponder)
 	fmt.Printf("responder is receiving encrypted: %s\n", bufferResponder)
 
-	fmt.Println("handshake done!")
+	fmt.Println("\n==== handshake done =====\n")
 	// HANDSHAKE DONE!
+	fmt.Println("\n==== initiator sending ciphertext =====\n")
 	ciphertext := initiatorCipherWrite.Send_ENC(false, []byte("hello!"))
+	mac := initiatorCipherWrite.Send_MAC(false, 16)
 
+	fmt.Println("\n==== responder receiving ciphertext =====\n")
 	fmt.Println("sending ciphertext:", ciphertext)
 	plaintext := responderCipherRead.Recv_ENC(false, ciphertext)
-
+	ok := responderCipherRead.Recv_MAC(false, mac)
+	if !ok {
+		panic("bad ciphertext")
+	}
 	fmt.Printf("receiving ciphertext: %s\n", plaintext)
 }
