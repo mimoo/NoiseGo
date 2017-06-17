@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	strobe "golang.org/x/crypto/sha3"
+	"github.com/mimoo/StrobeGo/strobe"
 )
 
 //
@@ -149,8 +149,9 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 		h.messagePattern = nil
 
 		/*
-			Here I could have used Strobe's PRF instead
-			Also, mabe I should do a h.strobeState.forceF() before cloning?
+			Here:
+			- I could have used Strobe's PRF instead
+			- maybe I should do a h.strobeState.ForceF() before cloning?
 		*/
 
 		c1 = h.strobeState.Clone()
