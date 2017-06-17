@@ -219,8 +219,12 @@ type handshakeState struct {
 	messagePattern []string // A sequence of message patterns. Each message pattern is a sequence of tokens from the set ("e", "s", "ee", "es", "se", "ss")
 }
 
-var EmptyKey = keyPair{}
-
+// This allows you to initialize a peer.
+// * see `patterns` for a list of available handshakePatterns
+// * initiator = false means the instance is for a responder
+// * prologue is a byte string record of anything that happened prior the Noise handshakeState
+// * s, e, rs, re are the local and remote static/ephemeral key pairs to be set (if they exist)
+// the function returns a handshakeState object.
 func Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, rs, re *keyPair) (h handshakeState) {
 	if _, ok := patterns[handshakePattern]; !ok {
 		panic("the supplied handshakePattern does not exist")
@@ -248,10 +252,18 @@ func Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, 
 
 	// TODO: understand "e" in pre-message patterns
 	if strings.Contains(patterns[handshakePattern].initiatorPreMessagePattern, "s") {
-		h.symmetricState.mixHash(s.publicKey[:])
+		if initiator {
+			h.symmetricState.mixHash(s.publicKey[:])
+		} else {
+			h.symmetricState.mixHash(rs.publicKey[:])
+		}
 	}
 	if strings.Contains(patterns[handshakePattern].responderPreMessagePattern, "s") {
-		h.symmetricState.mixHash(rs.publicKey[:])
+		if initiator {
+			h.symmetricState.mixHash(rs.publicKey[:])
+		} else {
+			h.symmetricState.mixHash(s.publicKey[:])
+		}
 	}
 
 	h.messagePattern = patterns[handshakePattern].messagePattern
@@ -359,7 +371,7 @@ func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 
 		}
 	}
 
-	// Appends EncryptAndHash(payload) to the buffer
+	// Appends decrpyAndHash(payload) to the buffer
 	*payloadBuffer = append(*payloadBuffer, h.symmetricState.decryptAndHash(message[offset:])...)
 
 	// remove the pattern from the messagePattern
