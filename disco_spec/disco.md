@@ -1,6 +1,6 @@
 ---
 title:      'The Disco Protocol Framework'
-author:     'David Wong (moi@davidwong.fr)'
+author:     'David Wong (moi@davidwong.fr), Trevor Perrin (noise@trevp.net)'
 revision:   '1'
 date:       '2017-06-17'
 bibliography: 'my.bib'
@@ -11,7 +11,7 @@ csl:        'ieee-with-url.csl'
 1. Introduction
 ================
 
-Disco is a framework for crypto protocols based on the Noise Protocol framework
+Disco is a framework for crypto protocols based on the Disco Protocol framework
 and the Strobe protocol framework. Disco can describe protocols that consist of
 a single message as well as interactive protocols.  
 
@@ -505,11 +505,11 @@ the next by the *initiator*, and so on.)
 
 The following handshake pattern describes an unauthenticated DH handshake:
 
-    Noise_NN():
+    Disco_NN():
       -> e
       <- e, ee
 
-The handshake pattern name is `Noise_NN`.  This naming convention will be
+The handshake pattern name is `Disco_NN`.  This naming convention will be
 explained in [Section 7.3](#interactive-patterns).  The empty parentheses
 indicate that neither party is initialized with any key pairs.  The tokens
 `"s"`, `"e"`, or `"e, s"` inside the parentheses would indicate that the
@@ -533,7 +533,7 @@ This pre-knowledge allows an encrypted payload to be sent in the first message
 ("zero-RTT encryption"), although full forward secrecy and replay protection is
 only achieved with the second message.
 
-    Noise_NK(rs):
+    Disco_NK(rs):
       <- s
       ...
       -> e, es
@@ -593,26 +593,26 @@ status of the sender's static key:
  * **`X`** = Static key for sender **`X`**mitted ("transmitted") to recipient
 
 +-------------------------+
-|     Noise_N(rs):        |
+|     Disco_N(rs):        |
 |       <- s              |
 |       ...               |
 |       -> e, es          |
 +-------------------------+
-|     Noise_K(s, rs):     |
+|     Disco_K(s, rs):     |
 |       -> s              |
 |       <- s              |
 |       ...               |
 |       -> e, es, ss      |
 +-------------------------+
-|     Noise_X(s, rs):     |
+|     Disco_X(s, rs):     |
 |       <- s              |
 |       ...               |
 |       -> e, es, s, ss   |
 +-------------------------+
 
-`Noise_N` is a conventional DH-based public-key encryption.  The other patterns
+`Disco_N` is a conventional DH-based public-key encryption.  The other patterns
 add sender authentication, where the sender's public key is either known to the
-recipient beforehand (`Noise_K`) or transmitted under encryption (`Noise_X`).
+recipient beforehand (`Disco_K`) or transmitted under encryption (`Disco_X`).
 
 7.3. Interactive patterns
 --------------------------
@@ -639,38 +639,38 @@ The second character refers to the responder's static key:
 \newpage
 
 +---------------------------+--------------------------------+
-|     Noise_NN():           |        Noise_KN(s):            |
+|     Disco_NN():           |        Disco_KN(s):            |
 |       -> e                |          -> s                  |
 |       <- e, ee            |          ...                   |
 |                           |          -> e                  |
 |                           |          <- e, ee, se          |
 +---------------------------+--------------------------------+
-|     Noise_NK(rs):         |        Noise_KK(s, rs):        |
+|     Disco_NK(rs):         |        Disco_KK(s, rs):        |
 |       <- s                |          -> s                  |
 |       ...                 |          <- s                  |
 |       -> e, es            |          ...                   |
 |       <- e, ee            |          -> e, es, ss          |
 |                           |          <- e, ee, se          |
 +---------------------------+--------------------------------+
-|      Noise_NX(rs):        |         Noise_KX(s, rs):       |
+|      Disco_NX(rs):        |         Disco_KX(s, rs):       |
 |        -> e               |           -> s                 |
 |        <- e, ee, s, es    |           ...                  |
 |                           |           -> e                 |
 |                           |           <- e, ee, se, s, es  |
 +---------------------------+--------------------------------+
-|      Noise_XN(s):         |         Noise_IN(s):           |
+|      Disco_XN(s):         |         Disco_IN(s):           |
 |        -> e               |           -> e, s              |
 |        <- e, ee           |           <- e, ee, se         |
 |        -> s, se           |                                |
 +---------------------------+--------------------------------+
-|      Noise_XK(s, rs):     |         Noise_IK(s, rs):       |
+|      Disco_XK(s, rs):     |         Disco_IK(s, rs):       |
 |        <- s               |           <- s                 |      
 |        ...                |           ...                  |
 |        -> e, es           |           -> e, es, s, ss      |
 |        <- e, ee           |           <- e, ee, se         |
 |        -> s, se           |                                |
 +---------------------------+--------------------------------+
-|      Noise_XX(s, rs):     |         Noise_IX(s, rs):       |
+|      Disco_XX(s, rs):     |         Disco_IX(s, rs):       |
 |        -> e               |           -> e, s              |
 |        <- e, ee, s, es    |           <- e, ee, se, s, es  |
 |        -> s, se           |                                |
@@ -678,7 +678,7 @@ The second character refers to the responder's static key:
 
 \newpage
 
-The `Noise_XX` pattern is the most generically useful, since it is efficient
+The `Disco_XX` pattern is the most generically useful, since it is efficient
 and supports mutual authentication and transmission of static public keys.
 
 All interactive patterns allow some encryption of handshake payloads:
@@ -796,37 +796,37 @@ received.
 +--------------------------------------------------------------+
 |                          Authentication   Confidentiality    |
 +--------------------------------------------------------------+
-|     Noise_N                     0                2           |
+|     Disco_N                     0                2           |
 +--------------------------------------------------------------+
-|     Noise_K                     1                2           |
+|     Disco_K                     1                2           |
 +--------------------------------------------------------------+
-|     Noise_X                     1                2           |
+|     Disco_X                     1                2           |
 +--------------------------------------------------------------+
-|     Noise_NN                                                 |             
+|     Disco_NN                                                 |             
 |       -> e                      0                0           |               
 |       <- e, ee                  0                1           |               
 |       ->                        0                1           |               
 +--------------------------------------------------------------+
-|     Noise_NK                                                 |                                 
+|     Disco_NK                                                 |                                 
 |       <- s                                                   |
 |       ...                                                    |                                 
 |       -> e, es                  0                2           |               
 |       <- e, ee                  2                1           |               
 |       ->                        0                5           |               
 +--------------------------------------------------------------+
-|     Noise_NX                                                 |             
+|     Disco_NX                                                 |             
 |       -> e                      0                0           |               
 |       <- e, ee, s, es           2                1           |               
 |       ->                        0                5           |               
 +--------------------------------------------------------------+
-|     Noise_XN                                                 |                                 
+|     Disco_XN                                                 |                                 
 |       -> e                      0                0           |               
 |       <- e, ee                  0                1           |               
 |       -> s, se                  2                1           |               
 |       <-                        0                5           |               
 |                                                              |                                 
 +--------------------------------------------------------------+
-|     Noise_XK                                                 |                                 
+|     Disco_XK                                                 |                                 
 |       <- s                                                   |                                 
 |       ...                                                    |                                 
 |       -> e, es                  0                2           |               
@@ -834,13 +834,13 @@ received.
 |       -> s, se                  2                5           |               
 |       <-                        2                5           |               
 +--------------------------------------------------------------+
-|     Noise_XX                                                 |                                 
+|     Disco_XX                                                 |                                 
 |      -> e                       0                0           |               
 |      <- e, ee, s, es            2                1           |               
 |      -> s, se                   2                5           |               
 |      <-                         2                5           |               
 +--------------------------------------------------------------+
-|     Noise_KN                                                 |                                 
+|     Disco_KN                                                 |                                 
 |       -> s                                                   |                                 
 |       ...                                                    |                                 
 |       -> e                      0                0           |               
@@ -848,7 +848,7 @@ received.
 |       ->                        2                1           |               
 |       <-                        0                5           |               
 +--------------------------------------------------------------+
-|     Noise_KK                                                 |                                 
+|     Disco_KK                                                 |                                 
 |       -> s                                                   |                                 
 |       <- s                                                   |                                 
 |       ...                                                    |                                 
@@ -857,7 +857,7 @@ received.
 |       ->                        2                5           |               
 |       <-                        2                5           |               
 +--------------------------------------------------------------+
-|     Noise_KX                                                 |                           
+|     Disco_KX                                                 |                           
 |       -> s                                                   |                           
 |       ...                                                    |                                 
 |       -> e                      0                0           |               
@@ -865,13 +865,13 @@ received.
 |       ->                        2                5           |               
 |       <-                        2                5           |               
 +--------------------------------------------------------------+
-|     Noise_IN                                                 |    
+|     Disco_IN                                                 |    
 |       -> e, s                   0                0           |         
 |       <- e, ee, se              0                3           |         
 |       ->                        2                1           |         
 |       <-                        0                5           |         
 +--------------------------------------------------------------+
-|     Noise_IK                                                 |                        
+|     Disco_IK                                                 |                        
 |       <- s                                                   |                        
 |       ...                                                    |                        
 |       -> e, es, s, ss           1                2           |         
@@ -879,7 +879,7 @@ received.
 |       ->                        2                5           |         
 |       <-                        2                5           |         
 +--------------------------------------------------------------+
-|     Noise_IX                                                 |                        
+|     Disco_IX                                                 |                        
 |       -> e, s                   0                0           |         
 |       <- e, ee, se, s, es       2                3           |         
 |       ->                        2                5           |         
@@ -940,35 +940,35 @@ The properties for the relevant public key are:
 +------------------------------------------+
 |                Initiator      Responder  |           
 +------------------------------------------+
-|     Noise_N        -              3      |
+|     Disco_N        -              3      |
 +------------------------------------------+
-|     Noise_K        5              5      |
+|     Disco_K        5              5      |
 +------------------------------------------+
-|     Noise_X        4              3      |
+|     Disco_X        4              3      |
 +------------------------------------------+
-|     Noise_NN       -              -      |
+|     Disco_NN       -              -      |
 +------------------------------------------+
-|     Noise_NK       -              3      |
+|     Disco_NK       -              3      |
 +------------------------------------------+
-|     Noise_NX       -              1      |
+|     Disco_NX       -              1      |
 +------------------------------------------+
-|     Noise_XN       2              -      |
+|     Disco_XN       2              -      |
 +------------------------------------------+
-|     Noise_XK       8              3      |
+|     Disco_XK       8              3      |
 +------------------------------------------+
-|     Noise_XX       8              1      |
+|     Disco_XX       8              1      |
 +------------------------------------------+
-|     Noise_KN       7              -      |
+|     Disco_KN       7              -      |
 +------------------------------------------+
-|     Noise_KK       5              5      |
+|     Disco_KK       5              5      |
 +------------------------------------------+
-|     Noise_KX       7              6      |
+|     Disco_KX       7              6      |
 +------------------------------------------+
-|     Noise_IN       0              -      |
+|     Disco_IN       0              -      |
 +------------------------------------------+
-|     Noise_IK       4              3      |
+|     Disco_IK       4              3      |
 +------------------------------------------+
-|     Noise_IX       0              6      |
+|     Disco_IX       0              6      |
 +------------------------------------------+
 
 8. Protocol names
@@ -979,9 +979,9 @@ ASCII names for the handshake pattern, the DH functions, the cipher functions,
 and the hash functions, with underscore separators.  The resulting name must be 255
 bytes or less.  Examples:
 
- * `Noise_XX_25519_AESGCM_SHA256`
- * `Noise_N_25519_ChaChaPoly_BLAKE2s`
- * `Noise_IK_448_ChaChaPoly_BLAKE2b`
+ * `Disco_XX_25519_STROBEv1.0.2`
+ * `Disco_N_25519_STROBEv1.0.2`
+ * `Disco_IK_448_STROBEv1.0.2`
 
 Disco allows a **modifier** syntax to specify arbitrary extensions or
 modifications to default behavior.  For example, a modifier could be applied to
@@ -993,13 +993,13 @@ protocol name.  A modifier can be a **pattern modifier**, **DH modifier**,
 protocol name it is added to.  
 
 The first modifier added onto a base name is simply appended.  Thus, `fallback`
-(defined later) is a pattern modifier added to the `Noise_XX` base name to
-produce `Noise_XXfallback`.  Additional modifiers are separated with a plus
+(defined later) is a pattern modifier added to the `Disco_XX` base name to
+produce `Disco_XXfallback`.  Additional modifiers are separated with a plus
 sign.  Thus, adding the `psk0` pattern modifier (defined in the next section)
-would result in the pattern name `Noise_XXfallback+psk0`.
+would result in the pattern name `Disco_XXfallback+psk0`.
 
 The final protocol name, including all modifiers, must be less than or equal to 255
-bytes (e.g. `Noise_XXfallback+psk0_25519_AESGCM_SHA256`).
+bytes (e.g. `Disco_XXfallback+psk0_25519_STROBEv1.0.2`).
 
 9. Pre-shared symmetric keys
 ============
@@ -1055,27 +1055,27 @@ PSK pattern on the right:
 
 
 +--------------------------------+--------------------------------------+
-|     Noise_N(rs):               |        Noise_Npsk0(rs):              |
+|     Disco_N(rs):               |        Disco_Npsk0(rs):              |
 |       <- s                     |          <- s                        |
 |       ...                      |          ...                         |
 |       -> e, es                 |          -> psk, e, es               |
 |                                |                                      |
 +--------------------------------+--------------------------------------+
-|     Noise_K(s, rs):            |        Noise_Kpsk0(s, rs):           |
+|     Disco_K(s, rs):            |        Disco_Kpsk0(s, rs):           |
 |       <- s                     |          <- s                        |
 |       ...                      |          ...                         |
 |       -> e, es, ss             |          -> psk, e, es, ss           |
 |                                |                                      |
 +--------------------------------+--------------------------------------+
-|     Noise_X(s, rs):            |        Noise_Xpsk1(s, rs):           |
+|     Disco_X(s, rs):            |        Disco_Xpsk1(s, rs):           |
 |       <- s                     |          <- s                        |
 |       ...                      |          ...                         |
 |       -> e, es, s, ss          |          -> e, es, s, ss, psk        |
 |                                |                                      |
 +--------------------------------+--------------------------------------+
 
-Note that the `psk1` modifier is recommended for `Noise_X`.  This is because
-`Noise_X` transmits the initiator's static public key.  Because PSKs are
+Note that the `psk1` modifier is recommended for `Disco_X`.  This is because
+`Disco_X` transmits the initiator's static public key.  Because PSKs are
 typically pairwise, the responder likely cannot determine the PSK until it has
 decrypted the initiator's static public key.  Thus, `psk1` is likely to be more
 useful here than `psk0`.
@@ -1084,104 +1084,104 @@ Following similar logic, we can define the most likely interactive PSK patterns:
 
 
 +--------------------------------+--------------------------------------+       
-|     Noise_NN():                |     Noise_NNpsk0():                  |
+|     Disco_NN():                |     Disco_NNpsk0():                  |
 |       -> e                     |       -> psk, e                      |
 |       <- e, ee                 |       <- e, ee                       |
 +--------------------------------+--------------------------------------+
-|     Noise_NN():                |     Noise_NNpsk2():                  |
+|     Disco_NN():                |     Disco_NNpsk2():                  |
 |       -> e                     |       -> e                           |
 |       <- e, ee                 |       <- e, ee, psk                  |
 +--------------------------------+--------------------------------------+
-|     Noise_NK(rs):              |     Noise_NKpsk0(rs):                |
+|     Disco_NK(rs):              |     Disco_NKpsk0(rs):                |
 |       <- s                     |       <- s                           |
 |       ...                      |       ...                            |
 |       -> e, es                 |       -> psk, e, es                  |
 |       <- e, ee                 |       <- e, ee                       |
 +--------------------------------+--------------------------------------+
-|     Noise_NK(rs):              |     Noise_NKpsk2(rs):                |
+|     Disco_NK(rs):              |     Disco_NKpsk2(rs):                |
 |       <- s                     |       <- s                           |
 |       ...                      |       ...                            |
 |       -> e, es                 |       -> e, es                       |
 |       <- e, ee                 |       <- e, ee, psk                  |
 +--------------------------------+--------------------------------------+
-|      Noise_NX(rs):             |      Noise_NXpsk2(rs):               |
+|      Disco_NX(rs):             |      Disco_NXpsk2(rs):               |
 |        -> e                    |        -> e                          |
 |        <- e, ee, s, es         |        <- e, ee, s, es, psk          |
 +--------------------------------+--------------------------------------+
-|      Noise_XN(s):              |      Noise_XNpsk3(s):                |
+|      Disco_XN(s):              |      Disco_XNpsk3(s):                |
 |        -> e                    |        -> e                          |
 |        <- e, ee                |        <- e, ee                      |
 |        -> s, se                |        -> s, se, psk                 |
 +--------------------------------+--------------------------------------+
-|      Noise_XK(s, rs):          |      Noise_XKpsk3(s, rs):            |
+|      Disco_XK(s, rs):          |      Disco_XKpsk3(s, rs):            |
 |        <- s                    |        <- s                          |
 |        ...                     |        ...                           |
 |        -> e, es                |        -> e, es                      |
 |        <- e, ee                |        <- e, ee                      |
 |        -> s, se                |        -> s, se, psk                 |
 +--------------------------------+--------------------------------------+
-|      Noise_XX(s, rs):          |      Noise_XXpsk3(s, rs):            |
+|      Disco_XX(s, rs):          |      Disco_XXpsk3(s, rs):            |
 |        -> e                    |        -> e                          |
 |        <- e, ee, s, es         |        <- e, ee, s, es               |
 |        -> s, se                |        -> s, se, psk                 |
 +--------------------------------+--------------------------------------+   
-|        Noise_KN(s):            |       Noise_KNpsk0(s):               |
+|        Disco_KN(s):            |       Disco_KNpsk0(s):               |
 |          -> s                  |         -> s                         |
 |          ...                   |         ...                          |
 |          -> e                  |         -> psk, e                    |
 |          <- e, ee, se          |         <- e, ee, se                 |
 +--------------------------------+--------------------------------------+   
-|        Noise_KN(s):            |       Noise_KNpsk2(s):               |
+|        Disco_KN(s):            |       Disco_KNpsk2(s):               |
 |          -> s                  |         -> s                         |
 |          ...                   |         ...                          |
 |          -> e                  |         -> e                         |
 |          <- e, ee, se          |         <- e, ee, se, psk            |
 +--------------------------------+--------------------------------------+
-|        Noise_KK(s, rs):        |       Noise_KKpsk0(s, rs):           |
+|        Disco_KK(s, rs):        |       Disco_KKpsk0(s, rs):           |
 |          -> s                  |         -> s                         |
 |          <- s                  |         <- s                         |
 |          ...                   |         ...                          |
 |          -> e, es, ss          |         -> psk, e, es, ss            |
 |          <- e, ee, se          |         <- e, ee, se                 |
 +--------------------------------+--------------------------------------+
-|        Noise_KK(s, rs):        |       Noise_KKpsk2(s, rs):           |
+|        Disco_KK(s, rs):        |       Disco_KKpsk2(s, rs):           |
 |          -> s                  |         -> s                         |
 |          <- s                  |         <- s                         |
 |          ...                   |         ...                          |
 |          -> e, es, ss          |         -> e, es, ss                 |
 |          <- e, ee, se          |         <- e, ee, se, psk            |
 +--------------------------------+--------------------------------------+
-|         Noise_KX(s, rs):       |        Noise_KXpsk2(s, rs):          |
+|         Disco_KX(s, rs):       |        Disco_KXpsk2(s, rs):          |
 |           -> s                 |          -> s                        |
 |           ...                  |          ...                         |
 |           -> e                 |          -> e                        |
 |           <- e, ee, se, s, es  |          <- e, ee, se, s, es, psk    |
 +--------------------------------+--------------------------------------+
-|         Noise_IN(s):           |        Noise_INpsk1(s):              |
+|         Disco_IN(s):           |        Disco_INpsk1(s):              |
 |           -> e, s              |          -> e, s, psk                |
 |           <- e, ee, se         |          <- e, ee, se                |
 |                                |                                      |
 +--------------------------------+--------------------------------------+
-|         Noise_IN(s):           |        Noise_INpsk2(s):              |
+|         Disco_IN(s):           |        Disco_INpsk2(s):              |
 |           -> e, s              |          -> e, s                     |
 |           <- e, ee, se         |          <- e, ee, se, psk           |
 |                                |                                      |
 +--------------------------------+--------------------------------------+
-|         Noise_IK(s, rs):       |        Noise_IKpsk1(s, rs):          |
+|         Disco_IK(s, rs):       |        Disco_IKpsk1(s, rs):          |
 |           <- s                 |          <- s                        |
 |           ...                  |          ...                         |
 |           -> e, es, s, ss      |          -> e, es, s, ss, psk        |
 |           <- e, ee, se         |          <- e, ee, se                |
 |                                |                                      |
 +--------------------------------+--------------------------------------+
-|         Noise_IK(s, rs):       |        Noise_IKpsk2(s, rs):          |
+|         Disco_IK(s, rs):       |        Disco_IKpsk2(s, rs):          |
 |           <- s                 |          <- s                        |
 |           ...                  |          ...                         |
 |           -> e, es, s, ss      |          -> e, es, s, ss             |
 |           <- e, ee, se         |          <- e, ee, se, psk           |
 |                                |                                      |
 +--------------------------------+--------------------------------------+
-|         Noise_IX(s, rs):       |        Noise_IXpsk2(s, rs):          |
+|         Disco_IX(s, rs):       |        Disco_IXpsk2(s, rs):          |
 |           -> e, s              |          -> e, s                     |
 |           <- e, ee, se, s, es  |          <- e, ee, se, s, es, psk    |
 |                                |                                      |
@@ -1190,7 +1190,7 @@ Following similar logic, we can define the most likely interactive PSK patterns:
 The above list does not exhaust all possible patterns that can be formed with
 these modifiers.  In particular, any of these PSK modifiers can be safely
 applied to any previously named pattern, resulting in patterns like
-`Noise_IKpsk0`, `Noise_KKpsk1`, or even `Noise_XXpsk0+psk3`, which aren't
+`Disco_IKpsk0`, `Disco_KKpsk1`, or even `Disco_XXpsk0+psk3`, which aren't
 listed above.
 
 This still doesn't exhaust all the ways that `"psk"` tokens could be used
@@ -1261,12 +1261,12 @@ message is processed succesfully.
 This section defines the **Disco Pipe** protocol.  This protocol uses
 three handshake patterns - two defined previously, and a new one.  These handshake patterns satisfy the full, zero-RTT, and fallback roles discussed in the previous section, so can be used to provide a full handshake with a simple zero-RTT option:
 
-    Noise_XX(s, rs):  
+    Disco_XX(s, rs):  
       -> e
       <- e, ee, s, es
       -> s, se
 
-    Noise_IK(s, rs):                   
+    Disco_IK(s, rs):                   
       <- s                         
       ...
       -> e, es, s, ss          
@@ -1275,23 +1275,23 @@ three handshake patterns - two defined previously, and a new one.  These handsha
 \newpage
 &nbsp;
 
-    Noise_XXfallback(e, s, rs):                   
+    Disco_XXfallback(e, s, rs):                   
       -> e
       ...
       <- e, ee, s, es
       -> s, se
 
-The `Noise_XX` pattern is used for a **full handshake** if the parties haven't
+The `Disco_XX` pattern is used for a **full handshake** if the parties haven't
 communicated before, after which the initiator can cache the responder's static
 public key.  
 
-The `Noise_IK` pattern is used for a **zero-RTT handshake**.  
+The `Disco_IK` pattern is used for a **zero-RTT handshake**.  
 
-The `Noise_XXfallback` pattern is used if the responder fails to decrypt the
-first `Noise_IK` message (perhaps due to changing a static key).  In this case
-the responder will switch to a **fallback handshake** using `Noise_XXfallback`,
-which is identical to `Noise_XX` except the ephemeral public key from the first
-`Noise_IK` message is used as the initiator's pre-message.
+The `Disco_XXfallback` pattern is used if the responder fails to decrypt the
+first `Disco_IK` message (perhaps due to changing a static key).  In this case
+the responder will switch to a **fallback handshake** using `Disco_XXfallback`,
+which is identical to `Disco_XX` except the ephemeral public key from the first
+`Disco_IK` message is used as the initiator's pre-message.
 
 
 10.4. Handshake indistinguishability
@@ -1307,16 +1307,16 @@ This is fairly easy:
  * The first three messages can have their payloads padded with random bytes to
    a constant size, regardless of which handshake is executed.
 
- * The responder will attempt to decrypt the first message as a `NoiseIK` message,
-   and will fallback to `Noise_XXfallback` if decryption fails.
+ * The responder will attempt to decrypt the first message as a `DiscoIK` message,
+   and will fallback to `Disco_XXfallback` if decryption fails.
 
- * An initiator who sends a `Noise_IK` initial message can use trial decryption
-   to differentiate between a response using `Noise_IK` or `Noise_XXfallback`.
+ * An initiator who sends a `Disco_IK` initial message can use trial decryption
+   to differentiate between a response using `Disco_IK` or `Disco_XXfallback`.
 
  * An initiator attempting a full handshake will send an ephemeral public key, then
- random padding, and will use `Noise_XXfallback` to handle the response.
- Note that `Noise_XX` isn't used, because the server can't
- distinguish a `Noise_XX` message from a failed `Noise_IK` attempt by using trial decryption.
+ random padding, and will use `Disco_XXfallback` to handle the response.
+ Note that `Disco_XX` isn't used, because the server can't
+ distinguish a `Disco_XX` message from a failed `Disco_IK` attempt by using trial decryption.
 
 This leaves the Disco ephemeral public keys in the clear.  Ephemeral public
 keys are randomly chosen DH public values, but they will typically have enough
@@ -1333,17 +1333,17 @@ Elligator [@elligator] could be used.
 
 Consider a protocol where an initiator will authenticate herself if the responder
 requests it.  This could be viewed as the initiator choosing between patterns
-like `Noise_NX` and `Noise_XX` based on some value inside the responder's first
+like `Disco_NX` and `Disco_XX` based on some value inside the responder's first
 handshake payload.  
 
 Disco doesn't directly support this.  Instead, this could be simulated by
-always executing `Noise_XX`.  The initiator can simulate the `Noise_NX` case by
+always executing `Disco_XX`.  The initiator can simulate the `Disco_NX` case by
 sending a **dummy static public key** if authentication is not requested.  The
 value of the dummy public key doesn't matter.
 
 This technique is simple, since it allows use of a single handshake pattern.
 It also doesn't reveal which option was chosen from message sizes or
-computation time.  It could be extended to allow a `Noise_XX` pattern to
+computation time.  It could be extended to allow a `Disco_XX` pattern to
 support any permutation of authentications (initiator only, responder only,
 both, or none).  
 
@@ -1422,11 +1422,10 @@ An application built on Disco must consider several issues:
    typical uses, though the `448` DH functions might offer extra security
    in case a cryptanalytic attack is developed against elliptic curve
    cryptography.  The `448` DH functions should be used with a 512-bit hash
-   like `SHA512` or `BLAKE2b`.  The `25519` DH functions may be used with a
-   256-bit hash like `SHA256` or `BLAKE2s`, though a 512-bit hash might offer
+   like Strobe's `PRF(64)`.  The `25519` DH functions may be used with a
+   256-bit hash like Strobe's `PRF(32)`, though a 512-bit hash might offer
    extra security in case a cryptanalytic attack is developed
-   against the smaller hash functions.  `AESGCM` is hard to implement with
-   high speed and constant time in software.
+   against the smaller hash functions.
 
  * **Extensibility**:  Applications are recommended to use an extensible data
    format for the payloads of all messages (e.g. JSON, Protocol Buffers).  This
@@ -1478,7 +1477,7 @@ This section collects various security considerations:
    with a pre-message public key and assume that a successful handshake implies
    the other party's knowledge of the public key.  Unfortunately, this is not
    the case, since setting public keys to invalid values might cause
-   predictable DH output.  For example, a `Noise_NK_25519` initiator might send
+   predictable DH output.  For example, a `Disco_NK_25519` initiator might send
    an invalid ephemeral public key to cause a known DH output of all zeros,
    despite not knowing the responder's static public key. If the parties want
    to authenticate with a shared secret, it should be used as a PSK [@book2].
@@ -1597,7 +1596,7 @@ The Disco specification (this document) is hereby placed in the public domain.
 
 Disco is inspired by:
 
-  * The Noise Protocol Framework from Trevor Perrin [@noise].
+  * The Disco Protocol Framework from Trevor Perrin [@noise].
   * The NaCl and CurveCP protocols from Dan Bernstein et al [@nacl; @curvecp].
   * The SIGMA and HOMQV protocols from Hugo Krawczyk [@sigma; @homqv].
   * The Ntor protocol from Ian Goldberg et al [@ntor].
