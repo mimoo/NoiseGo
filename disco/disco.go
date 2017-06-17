@@ -1,7 +1,6 @@
 package disco
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/mimoo/StrobeGo/strobe"
@@ -109,14 +108,10 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 
 		if pattern == "e" {
 			h.e = GenerateKeypair()
-			fmt.Println("send e", h.e.publicKey[:])
 			*messageBuffer = append(*messageBuffer, h.e.publicKey[:]...)
 			h.strobeState.Send_CLR(false, h.e.publicKey[:])
 		} else if pattern == "s" {
-			fmt.Println("send s", h.s.publicKey)
-			*messageBuffer = append(*messageBuffer, h.strobeState.Send_ENC(false, h.s.publicKey[:])...)
-			*messageBuffer = append(*messageBuffer, h.strobeState.Send_MAC(false, 16)...)
-			fmt.Println(*messageBuffer)
+			*messageBuffer = append(*messageBuffer, h.strobeState.Send_AEAD(h.s.publicKey[:], []byte{})...)
 		} else if pattern == "ee" {
 			h.strobeState.KEY(dh(h.e, h.re.publicKey))
 		} else if pattern == "es" {
@@ -139,9 +134,7 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 	}
 
 	// Appends EncryptAndHash(payload) to the buffer
-	*messageBuffer = append(*messageBuffer, h.strobeState.Send_ENC(false, payload)...)
-	*messageBuffer = append(*messageBuffer, h.strobeState.Send_MAC(false, 16)...)
-	fmt.Println("sending encrypted last buffer", messageBuffer)
+	*messageBuffer = append(*messageBuffer, h.strobeState.Send_AEAD(payload, []byte{})...)
 
 	// remove the pattern from the messagePattern
 	if len(h.messagePattern) == 1 {
@@ -184,18 +177,15 @@ func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 
 			copy(h.re.publicKey[:], message[offset:offset+dhLen])
 			offset += dhLen
 			h.strobeState.Recv_CLR(false, h.re.publicKey[:])
-			fmt.Println("read e", h.re.publicKey[:])
 		} else if pattern == "s" {
 
-			copy(h.rs.publicKey[:], h.strobeState.Recv_ENC(false, message[offset:offset+dhLen]))
-			offset += dhLen
-			fmt.Println("read s", h.rs.publicKey)
-			if !h.strobeState.Recv_MAC(false, message[offset:offset+16]) {
+			pubKey, ok := h.strobeState.Recv_AEAD(message[offset:offset+dhLen+16], []byte{})
+			if !ok {
 				// TODO: fail gracefuly
 				panic("bad MAC")
 			}
-
-			offset += 16
+			offset += dhLen + 16
+			copy(h.rs.publicKey[:], pubKey)
 
 		} else if pattern == "ee" {
 			h.strobeState.KEY(dh(h.e, h.re.publicKey))
@@ -218,13 +208,13 @@ func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 
 		}
 	}
 
-	// Appends EncryptAndHash(payload) to the buffer
-	fmt.Println("receiving encrypted data", message[offset:])
-	*payloadBuffer = append(*payloadBuffer, h.strobeState.Recv_ENC(false, message[offset:len(message)-16])...)
-	if !h.strobeState.Recv_MAC(false, message[len(message)-16:]) {
+	// Appends decrypted payload to the buffer
+	plaintext, ok := h.strobeState.Recv_AEAD(message[offset:], []byte{})
+	if !ok {
 		// TODO: fail gracefuly
 		panic("invalid MAC")
 	}
+	*payloadBuffer = append(*payloadBuffer, plaintext...)
 
 	// remove the pattern from the messagePattern
 	if len(h.messagePattern) == 1 {

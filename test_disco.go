@@ -46,26 +46,35 @@ func main() {
 	// 3. "->s, se" - send last trip
 	fmt.Println("\n==== initiator ->s, se =====\n")
 	bufferInitiator = bufferInitiator[:0]
-	initiatorCipherWrite, _ := initiator.WriteMessage([]byte("oui et toi?"), &bufferInitiator)
+	initiatorCipherWrite, initiatorCipherRead := initiator.WriteMessage([]byte("oui et toi?"), &bufferInitiator)
 
 	// 3. "->s, se" - receive last trip
 	fmt.Println("\n==== responder ->s, se =====\n")
 	bufferResponder = bufferResponder[:0]
-	responderCipherRead, _ := responder.ReadMessage(bufferInitiator, &bufferResponder)
+	responderCipherRead, responderCipherWrite := responder.ReadMessage(bufferInitiator, &bufferResponder)
 	fmt.Printf("responder is receiving encrypted: %s\n", bufferResponder)
 
 	fmt.Println("\n==== handshake done =====\n")
 	// HANDSHAKE DONE!
 	fmt.Println("\n==== initiator sending ciphertext =====\n")
-	ciphertext := initiatorCipherWrite.Send_ENC(false, []byte("hello!"))
-	mac := initiatorCipherWrite.Send_MAC(false, 16)
+	ciphertext := initiatorCipherWrite.Send_AEAD([]byte("hello!"), []byte{})
 
 	fmt.Println("\n==== responder receiving ciphertext =====\n")
 	fmt.Println("sending ciphertext:", ciphertext)
-	plaintext := responderCipherRead.Recv_ENC(false, ciphertext)
-	ok := responderCipherRead.Recv_MAC(false, mac)
+	plaintext, ok := responderCipherRead.Recv_AEAD(ciphertext, []byte{})
 	if !ok {
 		panic("bad ciphertext")
 	}
 	fmt.Printf("receiving ciphertext: %s\n", plaintext)
+
+	fmt.Println("\n==== responder replying =====\n")
+	ciphertext = responderCipherWrite.Send_AEAD([]byte("what's up?!"), []byte{})
+
+	fmt.Println("\n==== initiator getting the reply =====\n")
+	plaintext, ok = initiatorCipherRead.Recv_AEAD(ciphertext, []byte{})
+	if !ok {
+		panic("bad ciphertext")
+	}
+	fmt.Printf("receiving ciphertext: %s\n", plaintext)
+
 }
