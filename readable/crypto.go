@@ -121,6 +121,6 @@ func hkdf(chainingKey, inputKeyMaterial []byte, numOutputs int) (output []byte) 
 	if numOutputs == 2 {
 		return
 	}
-	output = append(output, hmacHash(tempKey, append(output, 0x03))...)
+	output = append(output, hmacHash(tempKey, append(output[32:], 0x03))...)
 	return
 }
