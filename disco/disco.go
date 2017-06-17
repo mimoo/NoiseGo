@@ -53,10 +53,13 @@ func Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, 
 		panic("the supplied handshakePattern does not exist")
 	}
 
+	// initializing the Strobe state
 	h.strobeState = strobe.InitStrobe("DISCOv0.1.0_" + handshakePattern)
-
+	// setting the length of the MAC
+	h.strobeState.SetMacLen(16)
+	// authenticating the prologue
 	h.strobeState.AD(false, prologue)
-
+	// setting known key pairs
 	if s != nil {
 		h.s = *s
 	}
@@ -69,6 +72,7 @@ func Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, 
 	if re != nil {
 		h.re = *re
 	}
+	// setting the role
 	h.initiator = initiator
 
 	//Calls MixHash() once for each public key listed in the pre-messages from handshake_pattern, with the specified public key as input (see Section 7 for an explanation of pre-messages). If both initiator and responder have pre-messages, the initiator's public keys are hashed first.
@@ -94,6 +98,11 @@ func Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, 
 	return
 }
 
+// WriteMessage takes a payload and a messageBuffer
+// It goes through the message pattern, encrypts the payload and modifies the messageBuffer for the application to send
+// If the handshake is done, it returns two Strobe states.
+// - the first Strobe state is the initiator's Write (the responder's Read)
+// - the second Strobe state is the responder's Write (the initiator's Read)
 func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1 strobe.Strobe, c2 strobe.Strobe) {
 	// example: h.messagePattern[0] = "->e,se,ss"
 	if len(h.messagePattern) == 0 {
@@ -159,6 +168,11 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 	return
 }
 
+// ReadMessage takes a received message and a payloadBuffer
+// It goes through the message pattern, decrypts the payload and modifies the messageBuffer for the application to send
+// If the handshake is done, it returns two Strobe states.
+// - the first Strobe state is the initiator's Write (the responder's Read)
+// - the second Strobe state is the responder's Write (the initiator's Read)
 func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 strobe.Strobe, c2 strobe.Strobe) {
 	// example: h.messagePattern[0] = "->e,se,ss"
 	if len(h.messagePattern) == 0 {
