@@ -1,5 +1,7 @@
 # Noise Implementation in Go
 
+![disco](http://i.imgur.com/4a9upuk.jpg)
+
 This is a **readable** implementation of the Noise Protocol Framework.
 
 I have tried to respect the Noise specification as much as possible.
