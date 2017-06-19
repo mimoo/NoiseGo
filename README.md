@@ -2,7 +2,7 @@
 
 ![disco](http://i.imgur.com/4a9upuk.jpg)
 
-This is a **readable** implementation of the Noise Protocol Framework.
+This is a **readable** implementation of the [Noise Protocol Framework](http://noiseprotocol.org/).
 
 I have tried to respect the Noise specification as much as possible.
 
