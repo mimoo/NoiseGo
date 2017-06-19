@@ -1,5 +1,7 @@
 # Noise+Strobe=Disco
 
+![disco](http://i.imgur.com/4a9upuk.jpg)
+
 This is a merge of the Noise protocol framework and the Strobe protocol framework.
 
 See [this discussion](https://moderncrypto.org/mail-archive/noise/2017/001122.html) for more information.
