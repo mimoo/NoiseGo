@@ -98,6 +98,21 @@ func Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, 
 	return
 }
 
+/*
+func (h *handshakeState) Reset() {
+		h.strobeState.Reset()
+
+		h.s.Reset()
+		h.e.Reset()
+		h.rs.Reset()
+		h.re.Reset()
+
+		initiator      = false
+		messagePattern = []string{}
+	}
+}
+*/
+
 // WriteMessage takes a payload and a messageBuffer
 // It goes through the message pattern, encrypts the payload and modifies the messageBuffer for the application to send
 // If the handshake is done, it returns two Strobe states.
@@ -157,9 +172,12 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 		*/
 
 		c1 = h.strobeState.Clone()
+		c1.AD(true, []byte("initiator"))
+		c1.RATCHET(strobe.Strobe_R)
+
 		c2 = h.strobeState
-		c1.KEY([]byte("initiator"))
-		c2.KEY([]byte("responder"))
+		c2.AD(true, []byte("responder"))
+		c2.RATCHET(strobe.Strobe_R)
 
 	} else {
 		h.messagePattern = h.messagePattern[1:]
@@ -236,9 +254,13 @@ func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 
 		h.messagePattern = nil
 
 		c1 = h.strobeState.Clone()
+		c1.AD(true, []byte("initiator"))
+		c1.RATCHET(strobe.Strobe_R)
+
 		c2 = h.strobeState
-		c1.KEY([]byte("initiator"))
-		c2.KEY([]byte("responder"))
+		c2.AD(true, []byte("responder"))
+		c2.RATCHET(strobe.Strobe_R)
+
 	} else {
 		h.messagePattern = h.messagePattern[1:]
 	}

@@ -47,13 +47,13 @@ func main() {
 	fmt.Println("\n==== initiator ->s, se =====\n")
 	bufferInitiator = bufferInitiator[:0]
 	initiatorCipherWrite, initiatorCipherRead := initiator.WriteMessage([]byte("oui et toi?"), &bufferInitiator)
-	initiator = nil // deleting the handshakeState
+	//initiator.Reset() // deleting the handshakeState
 
 	// 3. "->s, se" - receive last trip
 	fmt.Println("\n==== responder ->s, se =====\n")
 	bufferResponder = bufferResponder[:0]
 	responderCipherRead, responderCipherWrite := responder.ReadMessage(bufferInitiator, &bufferResponder)
-	responder = nil // deleting the handshakeState
+	//responder.Reset() // deleting the handshakeState
 	fmt.Printf("responder is receiving encrypted: %s\n", bufferResponder)
 
 	fmt.Println("\n==== handshake done =====\n")
