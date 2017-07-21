@@ -9,8 +9,8 @@
 
 ### 1.1. Motivation
 
-Noise is a framework for crypto protocols based on Diffie-Hellman key agreement. One of its most interesting property is that every new message depends on all the previous ones. This is done by continuously hashing messages being sent and received, as well as continuously deriving new keys based on the continuous hash and the previous keys. This interesting property stops at the end of the handshake.  
-Strobe is a protocol framework based on a [duplex construction](http://sponge.noekeon.org/). It naturally benefits from the same property, effectivelly absorbing every operation to influence the next ones. The Strobe specification is comparable to Noise, while focusing on the symmetric part of a protocol. By merging both protocols into one, Disco achieves the following goals:
+[Noise](http://noiseprotocol.org/) is a framework for crypto protocols based on Diffie-Hellman key agreement. One of its most interesting property is that every new message depends on all the previous ones. This is done by continuously hashing messages being sent and received, as well as continuously deriving new keys based on the continuous hash and the previous keys. This interesting property stops at the end of the handshake.  
+[Strobe](http://strobe.sourceforge.io/) is a protocol framework based on a [duplex construction](http://sponge.noekeon.org/). It naturally benefits from the same property, effectivelly absorbing every operation to influence the next ones. The Strobe specification is comparable to Noise, while focusing on the symmetric part of a protocol. By merging both protocols into one, Disco achieves the following goals:
 
 * The Noise specification can be greatly simplified by removing all the symmetric cryptographic algorithms and symmetric objects. These can be replaced by a single Strobe object.
 * Implementations of Noise with the Disco extension will consequently greatly benefit from this simplification, allowing for a drastic reduction of the codebase, facilitating security audits.
@@ -21,7 +21,7 @@ Strobe is a protocol framework based on a [duplex construction](http://sponge.no
 ### 1.2. How to Read This Document
 
 This specification is an extension of the Noise protocol framework revision 32. It relies for the most part on Noise's specification, while heavily modifying some other parts. Major changes can be seen in the next section.  
-To implement the Disco extension, a Strobe implementation respecting the functions of the [section 3.2 of this document](#3-2-functions) is required. None of the [cryptographic algorithms of Noise](http://noiseprotocol.org/noise.html#crypto-functions) are required. Furthermore, neither of the [CipherState](http://noiseprotocol.org/noise.html#the-cipherstate-object) object and the [SymmetricState](http://noiseprotocol.org/noise.html#the-symmetricstate-object) object are necessary. When implementing Noise with the Disco extension, simply implement the HandshakeState object following the changes described in [section 4 of this document](#-4-modifications-to-the-handshakestate). For pre-shared symmetric keys, refer to [section 5](#5-modifications-to-pre-shared-symmetric-key); for advanced features, refer to [section 6](#6-modifications-to-advanced-features).
+To implement the Disco extension, a Strobe implementation respecting the functions of the [section 3.2 of this document](#3-2-functions) is required. None of the [cryptographic algorithms of Noise](http://noiseprotocol.org/noise.html#crypto-functions) are required. Furthermore, neither the [CipherState](http://noiseprotocol.org/noise.html#the-cipherstate-object) or the [SymmetricState](http://noiseprotocol.org/noise.html#the-symmetricstate-object) object are necessary. When implementing Noise with the Disco extension, simply implement the HandshakeState object following the changes described in [section 4 of this document](#-4-modifications-to-the-handshakestate). For pre-shared symmetric keys, refer to [section 5](#5-modifications-to-pre-shared-symmetric-key); for advanced features, refer to [section 6](#6-modifications-to-advanced-features).
 
 ### 1.3. Major changes
 
@@ -34,16 +34,19 @@ The following list summarizes the major changes brought by this extension:
 
 ## 2. Protocol naming
 
-The protocol name starts by following the same convention of Noise, but stops at the declaration of the symmetric cryptographic algorithms. The rest is effectively replaced by the version of Strobe in use.
+The name of a Noise protocol extended with Disco starts by following the same convention, but stops at the declaration of the symmetric cryptographic algorithms. These are effectively replaced by the version of Strobe in use.
 
 ```
 Noise_[PATTERN]_[KEYEXCHANGE]_STROBEvX.Y.Z
 ```
 
-Note: the current version of [Strobe](https://strobe.sourceforge.io/) is STROBEv1.0.2
+For example, with the current version of [Strobe](https://strobe.sourceforge.io/) being STROBEv1.0.2:
 
+```
+Noise_XX_25519_STROBEv1.0.2
+```
 
-**TODO: maybe change this to Noise_[PATTERN]_[KEYEXCHANGE]_STROBEvX.Y.Z_PERMUTATION**
+<!-- TODO: maybe change this to Noise_[PATTERN]_[KEYEXCHANGE]_STROBEvX.Y.Z_PERMUTATION -->
 
 ## 3. The StrobeState Object
 
@@ -54,9 +57,7 @@ Note: the current version of [Strobe](https://strobe.sourceforge.io/) is STROBEv
 
 ### 3.2. Functions
 
-**TODO: only include the relevant functions here?**
-
-A StrobeState, implemented according to the [Strobe specification](https://strobe.sourceforge.io/) responds to the following functions:
+A StrobeState is litteraly the state of a Strobe duplex construction. While it responds to many functions ([see Strobe's specification](https://strobe.sourceforge.io/)), only the following ones need to be implemented in order for the Disco extension to work properly:
 
 **`InitializeStrobe(protocol_name)`**: Initialize the Strobe object with
    a custom protocol name.
@@ -79,12 +80,6 @@ A StrobeState, implemented according to the [Strobe specification](https://strob
 **`AD(additionalData)`**:
    XOR the additional data in the Strobe's state.
 
-**`Send_CLR(cleartext)`**:
-   XOR the cleartext in the Strobe's state.
-
-**`Recv_CLR(cleartext)`**:
-   XOR the cleartext in the Strobe's state.
-
 **`Send_MAC(output_length)`**:
    Retrieves the next `output_length` bytes from the Strobe's state.
 
@@ -97,30 +92,10 @@ A StrobeState, implemented according to the [Strobe specification](https://strob
 
 the following meta functions:
 
-**`Send_meta_ENC(plaintext)`**:
-   encrypting framing data
-
-**`Recv_meta_ENC(ciphertext)`**:
-   XOR the ciphertext with the Strobe's state. The Strobe's state is replaced
-   by the ciphertext, while the resulting plaintext is output to the caller.
-
 **`meta_AD(additionalData)`**:
    XOR the additional data in the Strobe's state.
 
-**`Send_meta_CLR(cleartext)`**:
-   XOR the cleartext in the Strobe's state.
-
-**`Recv_meta_CLR(cleartext)`**:
-   XOR the cleartext in the Strobe's state.
-
-**`Send_meta_MAC(output_length)`**:
-   Retrieves the next `output_length` bytes from the Strobe's state.
-
-**`Recv_meta_MAC(tag)`**:
-   Compare in constant-time the received tag with the next `len(tag)` bytes
-   from the Strobe's state.
-
-and the following two functions not specified in Strobe:
+and the following two functions which are not specified in Strobe:
 
 **`Send_AEAD(plaintext, ad)`**:
    Combines `SEND_ENC` followed with `SEND_MAC(TAGLEN)`.
@@ -131,46 +106,21 @@ and the following two functions not specified in Strobe:
 
 ## 4. Modifications to the HandshakeState
 
-**TODO: This is a copy/paste of the Noise, it should be rewritten**
+The handshakeState object can be implemented following Noise's specification, except for the following points:
 
-A `HandshakeState` object contains a `StrobeState` plus the following
-variables, any of which may be `empty`.  `Empty` is a special value which
-indicates the variable has not yet been initialized.
+A `HandshakeState` object contains a `StrobeState` in place of the `SymmetricState`.
 
-* **`s`**: The local static key pair
-* **`e`**: The local ephemeral key pair
-* **`rs`**: The remote party's static public key
-* **`re`**: The remote party's ephemeral public key
+All functions responding to a handshakeState have been modified. The following modifications only affect the algorithms, for more information refer to [section 5.3 of the Noise specification](http://noiseprotocol.org/noise.html#the-handshakestate-object).
 
-A `HandshakeState` also has variables to track its role, and the remaining
-portion of the handshake pattern:
+**`Initialize(handshake_pattern, initiator, prologue, s, e, rs, re)`**: 
 
-* **`initiator`**: A boolean indicating the initiator or responder role.
-* **`message_patterns`**: A sequence of message patterns.  Each message
-    pattern is a sequence of tokens from the set `("e", "s", "ee", "es", "se",
-    "ss")`.  (An additional `"psk"` token is introduced in [Section
-    9](pre-shared-symmetric-keys), but we defer its explanation until then.)
-
-A `HandshakeState` responds to the following functions:
-
-**`Initialize(handshake_pattern, initiator, prologue, s, e, rs, re)`**:
-
-Takes a valid `handshake_pattern` (see [Section 7](#handshake-patterns)) and an `initiator` boolean specifying this party's role as either initiator or responder.
-
-Takes a `prologue` byte sequence which may be zero-length, or which may contain context information that both parties want to confirm is identical (see [Section 6](#prologue)).
-
-Takes a set of DH key pairs `(s, e)` and public keys `(rs, re)` for initializing local variables, any of which may be empty.
-Public keys are only passed in if the `handshake_pattern` uses pre-messages (see [Section 7](#handshake-patterns)).The ephemeral values `(e, re)` are typically left empty, since they are created and exchanged during the handshake; but there are exceptions (see [Section 10.1](fallback-patterns)).
-
-Performs the following steps:
-
-* Derives a `protocol_name` byte sequence by combining the names for the handshake pattern and crypto functions, as specified in [Section 8](#protocol-names). Calls `InitializeStrobe(protocol_name)`.
+* Derives a `protocol_name` byte sequence by combining the names for the handshake pattern and crypto functions, as specified in [Section 2 of this document](#2-protocol-naming). Calls `InitializeStrobe(protocol_name)`.
 * Calls `AD(prologue)`.
 * Sets the `initiator`, `s`, `e`, `rs`, and `re` variables to the corresponding arguments.
-* Calls `AD()` once for each public key listed in the pre-messages from `handshake_pattern`, with the specified public key as input (see [Section 7](#handshake-patterns) for an explanation of pre-messages). If both initiator and responder have pre-messages, the initiator's public keys are hashed first.
+* Calls `AD()` once for each public key listed in the pre-messages from `handshake_pattern`, with the specified public key as input. If both initiator and responder have pre-messages, the initiator's public keys are hashed first.
 * Sets `message_patterns` to the message patterns from `handshake_pattern`.
 
-**`WriteMessage(payload, message_buffer)`**: Takes a `payload` byte sequence which may be zero-length, and a `message_buffer` to write the output into.  Performs the following steps:
+**`WriteMessage(payload, message_buffer)`**: 
 
 * Fetches and deletes the next message pattern from `message_patterns`, then sequentially processes each token from the message pattern:
     - For `"e"`:  Sets `e = GENERATE_KEYPAIR()`.  Appends `e.public_key` to the buffer.  Calls `AD(e.public_key)`.
@@ -182,7 +132,7 @@ Performs the following steps:
 * Appends `SEND_ENC(payload)` to the buffer.  
 * If there are no more message patterns returns two new `StrobeState` objects by calling `Split()`.
 
-**`ReadMessage(message, payload_buffer)`**: Takes a byte sequence containing a Disco handshake message, and a `payload_buffer` to write the message's plaintext payload into.  Performs the following steps:
+**`ReadMessage(message, payload_buffer)`**: 
 
 * Fetches and deletes the next message pattern from `message_patterns`, then sequentially processes each token from the message pattern:
     - For `"e"`: Sets `re` to the next `DHLEN` bytes from the message. Calls `AD(re.public_key)`.
@@ -197,7 +147,7 @@ Performs the following steps:
 **`Split()`**: Returns a pair of StrobeState objects for encrypting transport messages. Executes the following steps:
 
 * Sets `s1 = StrobeState` and `s2 = Clone(StrobeState)`.
-* Calls `AD_meta("initiator")` with `s1` and `AD_meta("responder")` with `s2`.
+* Calls `meta_AD("initiator")` with `s1` and `meta_AD("responder")` with `s2`.
 * Calls `RATCHET(R)` with `s1` and with `s2`.
 * Returns the pair (`s1`, `s2`).
 
@@ -205,61 +155,21 @@ Performs the following steps:
 
 ## 5. Modifications to Pre-shared Symmetric Key 
 
+PSK mode can use the `KEY()` function (instead of the original `MixKeyAndHash()` function) to mix the PSK into the Strobe state.
 
-### 5.1. Cryptographic functions
-
-
-**TODO: This is a copy/paste of the Noise, it should be rewritten**
-
-PSK mode uses the `KEY()` function to mix the PSK into the Strobe state.
-
-### 5.2. Handshake tokens
-
-
-**TODO: This is a copy/paste of the Noise, it should be rewritten**
-
-In a PSK handshake, a `"psk"` token is allowed to appear one or more times in a
-handshake pattern.  This token can only appear in message patterns (not
-pre-message patterns).  This token is processed by calling
-`KEY(psk)`, where `psk` is a 32-byte secret value provided by the
-application.
-
-In non-PSK handshakes, the `"e"` token in a pre-message pattern or message pattern always
-results in a call to `AD(e.public_key)`.  In a PSK handshake, all of these calls
-are followed by `AD(e.public_key)`.  In conjunction with the validity rule in the
-next section, this ensures that PSK-based encryption uses encryption keys that are randomized using
-ephemeral public keys as nonces.
-
-### 5.3. Validity rule
-
-**TODO: This is a copy/paste of the Noise, it should be rewritten**
-
-To prevent catastrophic key reuse, handshake patterns using the `"psk"` token must follow an additional validity rule:
-
- * A party may not send any encrypted data after it processes a `"psk"` token unless it has previously
- sent an ephemeral public key (an `"e"` token), either before or after the `"psk"` token.
-
-This rule guarantees that a `k` derived from a PSK will never be used for
-encryption unless it has also been randomized by `AD(e.public_key)`
-using a self-chosen ephemeral public key.
+<!-- does this need more information? -->
 
 ## 6. Modifications to Advanced Features
 
 ### 6.1 Channel Binding
 
-**TODO: More details**
-
-`PRF()` ?
+Right before calling `Split()`, a binding value could be obtained from the StrobeState by calling `PRF()`.
 
 ### 6.2 Rekey
-
-**TODO: More details**
 
 To enable this, Strobe supports a `RATCHET()` function.
 
 ## 7. Security Considerations
-
-**TODO: more details**
 
 The same security considerations that apply to Noise and Strobe are to be considered.
 
