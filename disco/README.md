@@ -2,8 +2,8 @@
 
 ![disco](http://i.imgur.com/4a9upuk.jpg)
 
-This is a merge of the Noise protocol framework and the Strobe protocol framework.
+This is an extension of the [Noise protocol framework](http://noiseprotocol.org/) to make use of the [Strobe protocol framework](https://strobe.sourceforge.io/).
 
 See [this discussion](https://moderncrypto.org/mail-archive/noise/2017/001122.html) for more information.
 
-See an example of what a spec for Disco could be [here](disco.md). It's a modification of Noise's specification and is here only for PoC purpose.
+[A specification](specification.md) is currently being drafted for this extension.
