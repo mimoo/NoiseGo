@@ -72,7 +72,7 @@ While a Strobe state responds to many functions ([see Strobe's specification](ht
 
 **`Send_MAC(output_length)`**: Permutes the Strobe's state and retrieves the next `output_length` bytes from the new state.
 
-**`Recv_MAC(tag)`**: Permutes the Strobe's state and compare (in **constant-time**) the received tag with the next `len(tag)` bytes from the new state.
+**`Recv_MAC(tag)`**: Permutes the Strobe's state and compare (in **constant-time**) the received tag with the next `TAGLEN` bytes from the new state.
 
 **`RATCHET(length)`**: Permutes the Strobe's state and set the next `length` bytes from the new state to zero.
 
