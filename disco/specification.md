@@ -96,17 +96,17 @@ The following **AEAD** functions which are not specified in Strobe:
 
 A SymmetricState object contains a **Strobe state** and responds to the following functions:
 
-**`InitializeSymmetric(protocol_name)`**: Calls InitializeStrobe(protocol_name) on the Strobe state.
+**`InitializeSymmetric(protocol_name)`**: Calls `InitializeStrobe(protocol_name)` on the Strobe state.
 
-**`MixKey(input_key_material)`**: Calls AD(input_key_material) on the Strobe state.
+**`MixKey(input_key_material)`**: Calls `AD(input_key_material)` on the Strobe state.
 
-**`MixHash(data)`**: Calls AD(data) on the Strobe state.
+**`MixHash(data)`**: Calls `AD(data)` on the Strobe state.
 
-**`MixKeyAndHash(input_key_material)`**: Calls AD(data) on the Strobe state.
+**`MixKeyAndHash(input_key_material)`**: Calls `AD(data)` on the Strobe state.
 
-**`EncryptAndHash(plaintext)`**: Send_AEAD(plaintext) on the Strobe state.
+**`EncryptAndHash(plaintext)`**: `Send_AEAD(plaintext)` on the Strobe state.
 
-**`DecryptAndHash(ciphertext)`**: Recv_AEAD(plaintext) on the Strobe state.
+**`DecryptAndHash(ciphertext)`**: `Recv_AEAD(plaintext)` on the Strobe state.
 
 **`Split()`**: Returns a pair of Strobe states for encrypting transport messages by executing the following steps:
 
