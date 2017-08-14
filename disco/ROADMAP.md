@@ -24,3 +24,5 @@ Disco relies on the [Noise protocol framework](http://noiseprotocol.org/), which
 **More**
 
 - [ ] Test this in different applications. This is important to make sure the API is secure (and easy) to use.
+- [ ] Create a C library in addition to the Go library.
+- [ ] Implement Strobe for other permutations (keccak-f[400] and keccak-f[800])
