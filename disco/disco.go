@@ -141,7 +141,8 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 			*messageBuffer = append(*messageBuffer, h.e.publicKey[:]...)
 			h.strobeState.Send_CLR(false, h.e.publicKey[:])
 		} else if pattern == "s" {
-			*messageBuffer = append(*messageBuffer, h.strobeState.Send_AEAD(h.s.publicKey[:], []byte{})...)
+			*messageBuffer = append(*messageBuffer, h.strobeState.Send_ENC_unauthenticated(false, h.s.publicKey[:])...)
+			*messageBuffer = append(*messageBuffer, h.strobeState.Send_MAC(false, macLen)...)
 		} else if pattern == "ee" {
 			h.strobeState.KEY(dh(h.e, h.re.publicKey))
 		} else if pattern == "es" {
@@ -164,7 +165,8 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 	}
 
 	// Appends EncryptAndHash(payload) to the buffer
-	*messageBuffer = append(*messageBuffer, h.strobeState.Send_AEAD(payload, []byte{})...)
+	*messageBuffer = append(*messageBuffer, h.strobeState.Send_ENC_unauthenticated(false, payload)...)
+	*messageBuffer = append(*messageBuffer, h.strobeState.Send_MAC(false, macLen)...)
 
 	// remove the pattern from the messagePattern
 	if len(h.messagePattern) == 1 {
@@ -207,22 +209,41 @@ func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 
 	// process the patterns
 	offset := 0
 
+	// TODO: make sure the message has the correct length every time (how to do this when we might not have all the data?)
+	// TODO: return errors to the caller otherwise
+	// TODO: make sure, somehow, that  messages are not more than 65535 (or something like that, it's Noise's message limit)
 	for _, pattern := range patterns {
 
 		pattern = strings.Trim(pattern, " ")
 
 		if pattern == "e" {
+			if len(message[offset:]) < dhLen {
+				// TODO: return a warning to the caller instead
+				panic("message received too short")
+			}
+
 			copy(h.re.publicKey[:], message[offset:offset+dhLen])
 			offset += dhLen
 			h.strobeState.Recv_CLR(false, h.re.publicKey[:])
 		} else if pattern == "s" {
 
-			pubKey, ok := h.strobeState.Recv_AEAD(message[offset:offset+dhLen+16], []byte{})
+			// expectedLenght := dhLen + macLen
+			if len(message[offset:]) < dhLen + macLen {
+				// TODO: return a warning to the caller instead
+				panic("message received too short")
+			}
+			pubKey := h.strobeState.Recv_ENC_unauthenticated(false, message[offset:offset+dhLen])
+			ok := h.strobeState.Recv_MAC(false, message[offset+dhLen:offset+dhLen+macLen])
+
 			if !ok {
-				// TODO: fail gracefuly
+				// TODO: return an error to the caller instead
 				panic("bad MAC")
 			}
-			offset += dhLen + 16
+
+			// TODO: there should be a validation of the key received here!
+			// idea: a validation function MUST be passed to the ReadMessage function (even just a { return True })
+
+			offset += dhLen + macLen
 			copy(h.rs.publicKey[:], pubKey)
 
 		} else if pattern == "ee" {
@@ -247,11 +268,19 @@ func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 
 	}
 
 	// Appends decrypted payload to the buffer
-	plaintext, ok := h.strobeState.Recv_AEAD(message[offset:], []byte{})
+	if len(message[offset:]) < macLen { // TODO: < or <= ?
+		// TODO: return a warning to the caller instead
+		panic("message received too short")
+	}
+
+	plaintext := h.strobeState.Recv_ENC_unauthenticated(false, message[offset:len(message)-macLen])
+	ok := h.strobeState.Recv_MAC(false, message[len(message)-macLen:])
+
 	if !ok {
 		// TODO: fail gracefuly
 		panic("invalid MAC")
 	}
+
 	*payloadBuffer = append(*payloadBuffer, plaintext...)
 
 	// remove the pattern from the messagePattern
@@ -270,5 +299,6 @@ func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 
 	} else {
 		h.messagePattern = h.messagePattern[1:]
 	}
+
 	return
 }
