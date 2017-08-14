@@ -3,7 +3,15 @@ package disco
 import (
 	"strings"
 
-	"github.com/mimoo/StrobeGo/strobe"
+	"github.com/mimoo/StrobeGo/compact"
+)
+
+//
+// Config
+//
+
+const (
+	macLen = 16
 )
 
 //
@@ -55,8 +63,6 @@ func Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, 
 
 	// initializing the Strobe state
 	h.strobeState = strobe.InitStrobe("DISCOv0.1.0_" + handshakePattern)
-	// setting the length of the MAC
-	h.strobeState.SetMacLen(16)
 	// authenticating the prologue
 	h.strobeState.AD(false, prologue)
 	// setting known key pairs
@@ -173,11 +179,11 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 
 		c1 = h.strobeState.Clone()
 		c1.AD(true, []byte("initiator"))
-		c1.RATCHET(strobe.Strobe_R)
+		c1.RATCHET(strobe.StrobeR)
 
 		c2 = h.strobeState
 		c2.AD(true, []byte("responder"))
-		c2.RATCHET(strobe.Strobe_R)
+		c2.RATCHET(strobe.StrobeR)
 
 	} else {
 		h.messagePattern = h.messagePattern[1:]
@@ -255,11 +261,11 @@ func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 
 
 		c1 = h.strobeState.Clone()
 		c1.AD(true, []byte("initiator"))
-		c1.RATCHET(strobe.Strobe_R)
+		c1.RATCHET(strobe.StrobeR)
 
 		c2 = h.strobeState
 		c2.AD(true, []byte("responder"))
-		c2.RATCHET(strobe.Strobe_R)
+		c2.RATCHET(strobe.StrobeR)
 
 	} else {
 		h.messagePattern = h.messagePattern[1:]
