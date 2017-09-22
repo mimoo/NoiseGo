@@ -184,24 +184,6 @@ func (s symmetricState) Split() (c1 cipherState, c2 cipherState) {
 }
 
 //
-// Handshake Patterns
-//
-
-type handshakePattern struct {
-	initiatorPreMessagePattern string
-	responderPreMessagePattern string
-	messagePattern             []string
-}
-
-var patterns = map[string]handshakePattern{
-	"XX": handshakePattern{
-		"",
-		"",
-		[]string{"->e", "<-e, ee, s, es", "->s, se"},
-	},
-}
-
-//
 // HandshakeState object
 //
 
@@ -217,6 +199,8 @@ type handshakeState struct {
 
 	initiator      bool     // A boolean indicating the initiator or responder role.
 	messagePattern []string // A sequence of message patterns. Each message pattern is a sequence of tokens from the set ("e", "s", "ee", "es", "se", "ss")
+
+	shouldWrite bool // A boolean indicating if the role of the peer is to WriteMessage or ReadMessage
 }
 
 // This allows you to initialize a peer.
@@ -246,7 +230,9 @@ func Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, 
 	if re != nil {
 		h.re = *re
 	}
+
 	h.initiator = initiator
+	h.shouldWrite = initiator
 
 	//Calls MixHash() once for each public key listed in the pre-messages from handshake_pattern, with the specified public key as input (see Section 7 for an explanation of pre-messages). If both initiator and responder have pre-messages, the initiator's public keys are hashed first.
 
@@ -272,6 +258,10 @@ func Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, 
 }
 
 func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1 cipherState, c2 cipherState) {
+	if !h.shouldWrite {
+		panic("noise: unexpected call to WriteMessage should be ReadMessage")
+	}
+
 	// example: h.messagePattern[0] = "->e,se,ss"
 	if len(h.messagePattern) == 0 {
 		panic("no more message pattern to write")
@@ -321,10 +311,17 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 	} else {
 		h.messagePattern = h.messagePattern[1:]
 	}
+
+	// change the direction
+	h.shouldWrite = false
+
 	return
 }
 
 func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 cipherState, c2 cipherState) {
+	if h.shouldWrite {
+		panic("noise: unexpected call to ReadMessage should be WriteMessage")
+	}
 	// example: h.messagePattern[0] = "->e,se,ss"
 	if len(h.messagePattern) == 0 {
 		panic("no more message pattern to read")
@@ -382,5 +379,9 @@ func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 
 	} else {
 		h.messagePattern = h.messagePattern[1:]
 	}
+
+	// change the direction
+	h.shouldWrite = true
+
 	return
 }

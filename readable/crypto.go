@@ -1,6 +1,5 @@
 /*
-	This is a readable implementation of Noisefunctions are implemented following the Noise specification
-http://noiseprotocol.org/noise.html
+	This is a readable implementation of Noise. It has not been fully tested so use at your own risks!
 */
 
 package noise
