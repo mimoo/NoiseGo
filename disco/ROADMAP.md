@@ -11,7 +11,7 @@ Disco relies on a [Strobe implementation in Go](https://github.com/mimoo/StrobeG
 * [ ] setup test vectors for StrobeGo (if none exist, create some and publish them)
 * [ ] setup fuzzing for StrobeGo
 
-**Disco**
+**Noise + Disco**
 
 Disco relies on the [Noise protocol framework](http://noiseprotocol.org/), which has not been fully implemented nor tested.
 
@@ -19,10 +19,14 @@ Disco relies on the [Noise protocol framework](http://noiseprotocol.org/), which
 - [ ] Implement Noise's Pre-Messages in Disco and NoiseGo
 - [ ] Implement Noise's Other Things (what are they?) in Disco and NoiseGo.
 - [ ] Test these things in NoiseGo (Test vectors, interact with other libraries, etc...) to make sure the Noise parts are correct
+
+**Disco**
+
+- [ ] build a real application on top of Disco
 - [ ] Setup fuzzing for Disco.
 
 **More**
 
 - [ ] Test this in different applications. This is important to make sure the API is secure (and easy) to use.
-- [ ] Create a C library in addition to the Go library.
+- [ ] Create C and C++ libraries in addition to the Go library.
 - [ ] Implement Strobe for other permutations (keccak-f[400] and keccak-f[800])
