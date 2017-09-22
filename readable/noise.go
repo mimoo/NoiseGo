@@ -140,14 +140,13 @@ func (s *symmetricState) mixKeyAndHash(inputKeyMaterial []byte) {
 
 // encrypts the plaintext and authenticates the hash
 // then insert the ciphertext in the running hash
-func (s *symmetricState) encryptAndHash(plaintext []byte) (ciphertext []byte) {
+func (s *symmetricState) encryptAndHash(plaintext []byte) (ciphertext []byte, err error) {
 
 	// Note that if k is empty, the encryptWithAd() call will set ciphertext equal to plaintext.
-	ciphertext, err := s.cipherState.EncryptWithAd(s.h[:], plaintext)
+	ciphertext, err = s.cipherState.EncryptWithAd(s.h[:], plaintext)
 
-	// TODO: this should probably kill the session instead (nonce reached maximum size)
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	s.mixHash(ciphertext)
@@ -156,14 +155,13 @@ func (s *symmetricState) encryptAndHash(plaintext []byte) (ciphertext []byte) {
 }
 
 // decrypts the ciphertext and authenticates the hash
-func (s *symmetricState) decryptAndHash(ciphertext []byte) (plaintext []byte) {
+func (s *symmetricState) decryptAndHash(ciphertext []byte) (plaintext []byte, err error) {
 
 	// Note that if k is empty, the decryptWithAd() call will set plaintext equal to ciphertext.
-	plaintext, err := s.cipherState.DecryptWithAd(s.h[:], ciphertext)
+	plaintext, err = s.cipherState.DecryptWithAd(s.h[:], ciphertext)
 
-	// TODO: handle this gracefuly! Could be nonce problem or mac problem
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	s.mixHash(ciphertext)
@@ -257,7 +255,7 @@ func Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, 
 	return
 }
 
-func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1 cipherState, c2 cipherState) {
+func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1, c2 cipherState, err error) {
 	if !h.shouldWrite {
 		panic("noise: unexpected call to WriteMessage should be ReadMessage")
 	}
@@ -278,7 +276,12 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 			*messageBuffer = append(*messageBuffer, h.e.publicKey[:]...)
 			h.symmetricState.mixHash(h.e.publicKey[:])
 		} else if pattern == "s" {
-			*messageBuffer = append(*messageBuffer, h.symmetricState.encryptAndHash(h.s.publicKey[:])...)
+			var ciphertext []byte
+			ciphertext, err = h.symmetricState.encryptAndHash(h.s.publicKey[:])
+			if err != nil {
+				return
+			}
+			*messageBuffer = append(*messageBuffer, ciphertext...)
 		} else if pattern == "ee" {
 			h.symmetricState.mixKey(dh(h.e, h.re.publicKey))
 		} else if pattern == "es" {
@@ -296,12 +299,17 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 		} else if pattern == "ss" {
 			h.symmetricState.mixKey(dh(h.s, h.rs.publicKey))
 		} else {
-			panic("pattern not allowed")
+			panic("token not allowed")
 		}
 	}
 
 	// Appends EncryptAndHash(payload) to the buffer
-	*messageBuffer = append(*messageBuffer, h.symmetricState.encryptAndHash(payload)...)
+	var ciphertext []byte
+	ciphertext, err = h.symmetricState.encryptAndHash(payload)
+	if err != nil {
+		return
+	}
+	*messageBuffer = append(*messageBuffer, ciphertext...)
 
 	// remove the pattern from the messagePattern
 	if len(h.messagePattern) == 1 {
@@ -318,7 +326,8 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 	return
 }
 
-func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 cipherState, c2 cipherState) {
+// TODO: return an error, see how Go TLS returns errors
+func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1, c2 cipherState, err error) {
 	if h.shouldWrite {
 		panic("noise: unexpected call to ReadMessage should be WriteMessage")
 	}
@@ -344,8 +353,12 @@ func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 
 			if h.symmetricState.cipherState.hasKey() {
 				tagLen = 16
 			}
-
-			copy(h.rs.publicKey[:], h.symmetricState.decryptAndHash(message[offset:offset+dhLen+tagLen]))
+			var plaintext []byte
+			plaintext, err = h.symmetricState.decryptAndHash(message[offset : offset+dhLen+tagLen])
+			if err != nil {
+				return
+			}
+			copy(h.rs.publicKey[:], plaintext)
 			offset += dhLen + tagLen
 		} else if pattern == "ee" {
 			h.symmetricState.mixKey(dh(h.e, h.re.publicKey))
@@ -364,12 +377,17 @@ func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1 
 		} else if pattern == "ss" {
 			h.symmetricState.mixKey(dh(h.s, h.rs.publicKey))
 		} else {
-			panic("pattern not allowed")
+			panic("token not allowed")
 		}
 	}
 
 	// Appends decrpyAndHash(payload) to the buffer
-	*payloadBuffer = append(*payloadBuffer, h.symmetricState.decryptAndHash(message[offset:])...)
+	var plaintext []byte
+	plaintext, err = h.symmetricState.decryptAndHash(message[offset:])
+	if err != nil {
+		return
+	}
+	*payloadBuffer = append(*payloadBuffer, plaintext...)
 
 	// remove the pattern from the messagePattern
 	if len(h.messagePattern) == 1 {
