@@ -63,7 +63,7 @@ func encrypt(k [32]byte, n uint64, ad, plaintext []byte) (ciphertext []byte) {
 	}
 
 	var nonce [8]byte
-	binary.BigEndian.PutUint64(nonce[:], n)
+	binary.LittleEndian.PutUint64(nonce[:], n)
 	ciphertext = cipher.Seal(nil, append([]byte{0, 0, 0, 0}, nonce[:]...), plaintext, ad)
 
 	return
@@ -77,7 +77,7 @@ func decrypt(k [32]byte, n uint64, ad, ciphertext []byte) (plaintext []byte, err
 	}
 
 	var nonce [8]byte
-	binary.BigEndian.PutUint64(nonce[:], n)
+	binary.LittleEndian.PutUint64(nonce[:], n)
 	plaintext, err = cipher.Open(nil, append([]byte{0, 0, 0, 0}, nonce[:]...), ciphertext, ad)
 	return
 }
