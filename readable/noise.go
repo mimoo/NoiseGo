@@ -1,14 +1,8 @@
-/*
- * This is a readable implementation of Noise_XX_25519_ChaChaPoly_SHA256
- * from the Noise Protocol Framework.
- *
- * Warning: it hasn't been fully tested
- *
- * There is probably no point extending this library with more patterns, although it is possible.
- *
- * Author: David Wong
- */
-
+// Package noise partially implements the Noise protocol framework
+// as specified in www.noiseprotocol.org
+//
+// Author: David Wong
+//
 package noise
 
 import (
