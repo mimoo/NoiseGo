@@ -65,7 +65,7 @@ func (c *Conn) SetWriteDeadline(t time.Time) error {
 func (c *Conn) Write(b []byte) (int, error) {
 
 	//
-	if hp := c.config.HandshakePattern; !c.isClient && (hp == NoiseN || hp == NoiseK || hp == NoiseX) {
+	if hp := c.config.HandshakePattern; !c.isClient && (hp == Noise_N || hp == Noise_K || hp == Noise_X) {
 		panic("Noise: a server should not write on one-way patterns")
 	}
 

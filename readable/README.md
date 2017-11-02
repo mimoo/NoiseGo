@@ -1,6 +1,6 @@
 # NoiseGo
 
-NoiseGo is a protocol based of the [Noise protocol framework](http://noiseprotocol.org/).
+NoiseGo is a protocol based on the [Noise protocol framework](http://noiseprotocol.org/).
 
 ## Usage
 

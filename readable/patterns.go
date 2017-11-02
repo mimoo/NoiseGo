@@ -11,18 +11,34 @@ const (
 	// 7.2. One-way patterns
 	//
 
-	// NoiseN is a one-way pattern
-	// NoiseN = No static key for sender
-	NoiseN noiseHandshakeType = iota
+	// NoiseN is a one-way pattern where a client can send
+	// data to a server with a known static key. The server
+	// can only receive data and cannot reply back.
+	Noise_N noiseHandshakeType = iota
 
+	//
 	// 7.3. Interactive patterns
-	NoiseNN
-	NoiseXX
+	//
+
+	// NoiseKK is a pattern where both the client static key and the
+	// server static key are known.
+	Noise_KK
+	// NoiseNX is a "HTTPS"-like pattern where the client is
+	// not authenticated, and the static public key of the server
+	// is transmitted during the handshake. It is the responsability of the client to validate the received key properly.
+	Noise_NX
+	// Noise_NK is a "Public Key Pinning"-like pattern where the client
+	// is not authenticated, and the static public key of the server
+	// is already known.
+	Noise_NK
+	// NoiseXX is a pattern where both static keys are transmitted.
+	// It is the responsability of the server and of the client to
+	// validate the received keys properly.
+	Noise_XX
 
 	// Not implemented
-
-	NoiseK
-	NoiseX
+	Noise_K
+	Noise_X
 )
 
 type token uint8
@@ -49,7 +65,7 @@ var patterns = map[noiseHandshakeType]handshakePattern{
 
 	// 7.2. One-way patterns
 
-	NoiseN: handshakePattern{
+	Noise_N: handshakePattern{
 		name: "N",
 		preMessagePatterns: []messagePattern{
 			messagePattern{},        // →
@@ -61,10 +77,46 @@ var patterns = map[noiseHandshakeType]handshakePattern{
 	},
 
 	//
-	//
+	// 7.3. Interactive patterns
 	//
 
-	NoiseXX: handshakePattern{
+	Noise_KK: handshakePattern{
+		name: "KK",
+		preMessagePatterns: []messagePattern{
+			messagePattern{token_s}, // →
+			messagePattern{token_s}, // ←
+		},
+		messagePatterns: []messagePattern{
+			messagePattern{token_e, token_es, token_ss}, // →
+			messagePattern{token_e, token_ee, token_se}, // ←
+		},
+	},
+
+	Noise_NX: handshakePattern{
+		name: "NX",
+		preMessagePatterns: []messagePattern{
+			messagePattern{}, // →
+			messagePattern{}, // ←
+		},
+		messagePatterns: []messagePattern{
+			messagePattern{token_e},                              // →
+			messagePattern{token_e, token_ee, token_s, token_es}, // ←
+		},
+	},
+
+	Noise_NK: handshakePattern{
+		name: "NK",
+		preMessagePatterns: []messagePattern{
+			messagePattern{},        // →
+			messagePattern{token_s}, // ←
+		},
+		messagePatterns: []messagePattern{
+			messagePattern{token_e, token_es}, // →
+			messagePattern{token_e, token_ee}, // ←
+		},
+	},
+
+	Noise_XX: handshakePattern{
 		name: "XX",
 		preMessagePatterns: []messagePattern{
 			messagePattern{}, // →

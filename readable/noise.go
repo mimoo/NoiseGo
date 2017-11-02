@@ -246,8 +246,14 @@ func Initialize(handshakeType noiseHandshakeType, initiator bool, prologue []byt
 	for _, token := range handshakePattern.preMessagePatterns[0] {
 		if token == token_s {
 			if initiator {
+				if s == nil {
+					panic("Noise: the static key of the client should be set")
+				}
 				h.symmetricState.mixHash(s.publicKey[:])
 			} else {
+				if rs == nil {
+					panic("Noise: the remote static key of the server should be set")
+				}
 				h.symmetricState.mixHash(rs.publicKey[:])
 			}
 		} else {
@@ -259,8 +265,14 @@ func Initialize(handshakeType noiseHandshakeType, initiator bool, prologue []byt
 	for _, token := range handshakePattern.preMessagePatterns[1] {
 		if token == token_s {
 			if initiator {
+				if rs == nil {
+					panic("Noise: the remote static key of the client should be set")
+				}
 				h.symmetricState.mixHash(rs.publicKey[:])
 			} else {
+				if s == nil {
+					panic("Noise: the static key of the server should be set")
+				}
 				h.symmetricState.mixHash(s.publicKey[:])
 			}
 		} else {
