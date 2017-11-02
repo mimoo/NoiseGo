@@ -7,38 +7,29 @@ package noise
 type noiseHandshakeType int8
 
 const (
-	//
-	// 7.2. One-way patterns
-	//
-
 	// NoiseN is a one-way pattern where a client can send
 	// data to a server with a known static key. The server
 	// can only receive data and cannot reply back.
 	Noise_N noiseHandshakeType = iota
 
-	//
-	// 7.3. Interactive patterns
-	//
-
 	// NoiseKK is a pattern where both the client static key and the
 	// server static key are known.
 	Noise_KK
+
 	// NoiseNX is a "HTTPS"-like pattern where the client is
 	// not authenticated, and the static public key of the server
 	// is transmitted during the handshake. It is the responsability of the client to validate the received key properly.
 	Noise_NX
+
 	// Noise_NK is a "Public Key Pinning"-like pattern where the client
 	// is not authenticated, and the static public key of the server
 	// is already known.
 	Noise_NK
+
 	// NoiseXX is a pattern where both static keys are transmitted.
 	// It is the responsability of the server and of the client to
 	// validate the received keys properly.
 	Noise_XX
-
-	// Not implemented
-	Noise_K
-	Noise_X
 )
 
 type token uint8
