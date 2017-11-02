@@ -33,7 +33,9 @@ type keyPair struct {
 	publicKey  [32]byte
 }
 
-func GenerateKeypair() (keyPair keyPair) {
+func GenerateKeypair() *keyPair {
+
+	var keyPair keyPair
 
 	if _, err := rand.Read(keyPair.privateKey[:]); err != nil {
 		// TODO: panic here really?
@@ -42,7 +44,7 @@ func GenerateKeypair() (keyPair keyPair) {
 
 	curve25519.ScalarBaseMult(&keyPair.publicKey, &keyPair.privateKey)
 
-	return
+	return &keyPair
 }
 
 func dh(keyPair keyPair, publicKey [32]byte) (shared [32]byte) {
@@ -63,6 +65,8 @@ func encrypt(k [32]byte, n uint64, ad, plaintext []byte) (ciphertext []byte) {
 
 	var nonce [8]byte
 	binary.LittleEndian.PutUint64(nonce[:], n)
+	// TODO: storage can be re-used by doing Seal(plaintext[:0], ...)
+	// if we do that, we could think of creating a single buffer of NoiseMessageLength for all operations
 	ciphertext = cipher.Seal(nil, append([]byte{0, 0, 0, 0}, nonce[:]...), plaintext, ad)
 
 	return
