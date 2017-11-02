@@ -65,7 +65,7 @@ func (c *Conn) SetWriteDeadline(t time.Time) error {
 func (c *Conn) Write(b []byte) (int, error) {
 
 	//
-	if hp := c.config.handshakePattern; !c.isClient && (hp == NoiseN || hp == NoiseK || hp == NoiseX) {
+	if hp := c.config.HandshakePattern; !c.isClient && (hp == NoiseN || hp == NoiseK || hp == NoiseX) {
 		panic("Noise: a server should not write on one-way patterns")
 	}
 
@@ -215,7 +215,7 @@ func (c *Conn) Handshake() error {
 	}
 
 	// Noise.Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, rs, re *keyPair) (h handshakeState)
-	hs := Initialize(c.config.handshakePattern, c.isClient, c.config.prologue, c.config.keyPair, c.config.ephemeralKeyPair, c.config.remoteKey, c.config.ephemeralRemoteKey)
+	hs := Initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, c.config.EphemeralKeyPair, c.config.RemoteKey, c.config.EphemeralRemoteKey)
 
 	// start handshake
 	var c1, c2 *cipherState
@@ -225,9 +225,9 @@ ContinueHandshake:
 	if hs.shouldWrite {
 		// we're writing the next message pattern, as well as sending any data there is to send
 		var handshakeDataToSend []byte
-		if len(c.config.handshakeDataToSend) != 0 {
-			handshakeDataToSend = c.config.handshakeDataToSend[0]
-			c.config.handshakeDataToSend = c.config.handshakeDataToSend[1:]
+		if len(c.config.HandshakeDataToSend) != 0 {
+			handshakeDataToSend = c.config.HandshakeDataToSend[0]
+			c.config.HandshakeDataToSend = c.config.HandshakeDataToSend[1:]
 		}
 		var bufToWrite []byte
 		c1, c2, err = hs.WriteMessage(handshakeDataToSend, &bufToWrite)
@@ -263,12 +263,12 @@ ContinueHandshake:
 			return err
 		}
 		// callbacks on received data
-		if len(c.config.handshakeReceivedDataCallBack) != 0 {
-			err = c.config.handshakeReceivedDataCallBack[0](receivedPayload)
+		if len(c.config.HandshakeReceivedDataCallBack) != 0 {
+			err = c.config.HandshakeReceivedDataCallBack[0](receivedPayload)
 			if err != nil {
 				return err
 			}
-			c.config.handshakeReceivedDataCallBack = c.config.handshakeReceivedDataCallBack[1:]
+			c.config.HandshakeReceivedDataCallBack = c.config.HandshakeReceivedDataCallBack[1:]
 		}
 
 	}

@@ -12,13 +12,13 @@ func TestNoiseSeveralRoutines(t *testing.T) {
 
 	// init
 	clientConfig := Config{
-		keyPair:           GenerateKeypair(),
-		handshakePattern:  NoiseXX,
-		publicKeyVerifier: publicKeyVerifier,
+		KeyPair:           GenerateKeypair(),
+		HandshakePattern:  NoiseXX,
+		PublicKeyVerifier: publicKeyVerifier,
 	}
 	serverConfig := Config{
-		keyPair:          GenerateKeypair(),
-		handshakePattern: NoiseXX,
+		KeyPair:          GenerateKeypair(),
+		HandshakePattern: NoiseXX,
 	}
 
 	// get a Noise.listener

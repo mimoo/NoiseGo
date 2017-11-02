@@ -19,12 +19,12 @@ const (
 
 type Config struct {
 	// This is MANDATORY to verify public keys sent by the other peer
-	publicKeyVerifier func([]byte) bool
+	PublicKeyVerifier func([]byte) bool
 
-	handshakePattern              noiseHandshakeType
-	prologue                      []byte
-	handshakeDataToSend           [][]byte
-	handshakeReceivedDataCallBack []func([]byte) error
-	keyPair, ephemeralKeyPair     *keyPair
-	remoteKey, ephemeralRemoteKey *keyPair
+	HandshakePattern              noiseHandshakeType
+	Prologue                      []byte
+	HandshakeDataToSend           [][]byte
+	HandshakeReceivedDataCallBack []func([]byte) error
+	KeyPair, EphemeralKeyPair     *keyPair
+	RemoteKey, EphemeralRemoteKey *keyPair
 }

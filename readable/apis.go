@@ -98,7 +98,7 @@ func DialWithDialer(dialer *net.Dialer, network, addr string, config *Config) (*
 	if config == nil {
 		return nil, errors.New("Noise: no Config set")
 	}
-	if hp := config.handshakePattern; config.publicKeyVerifier == nil && (hp == NoiseXX) {
+	if hp := config.HandshakePattern; config.PublicKeyVerifier == nil && (hp == NoiseXX) {
 		return nil, errors.New("Noise: no public key verifier set in Config")
 	}
 

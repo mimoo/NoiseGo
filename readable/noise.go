@@ -3,6 +3,9 @@
 //
 // Author: David Wong
 //
+// See Also
+//
+// Disco
 package noise
 
 import (

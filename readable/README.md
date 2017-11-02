@@ -13,9 +13,9 @@ import "github.com/mimoo/NoiseGo/readble/noise"
 
 func main() {
   serverConfig := noise.Config{
-    keyPair:          noise.GenerateKeypair(),
-    handshakePattern: noise.NoiseNN,
-    remoteKey:     []byte{...}
+    KeyPair:          noise.GenerateKeypair(),
+    HandshakePattern: noise.NoiseNN,
+    RemoteKey:     []byte{...}
   }
 
   listener, err := noise.Listen("tcp", "127.0.0.1:0", &serverConfig)
@@ -49,9 +49,9 @@ import "github.com/mimoo/NoiseGo/readble/noise"
 
 func main() {
 clientConfig := noise.Config{
-  keyPair:           noise.GenerateKeypair(),
-  handshakePattern:  noise.NoiseNN,
-  remoteKey:     []byte{...}
+  KeyPair:           noise.GenerateKeypair(),
+  HandshakePattern:  noise.NoiseNN,
+  RemoteKey:     []byte{...}
 }
 
 client, err := noise.Dial("tcp", addr, &clientConfig)

@@ -13,13 +13,13 @@ func TestNoiseXX(t *testing.T) {
 
 	// init
 	clientConfig := Config{
-		keyPair:           GenerateKeypair(),
-		handshakePattern:  NoiseXX,
-		publicKeyVerifier: publicKeyVerifier,
+		KeyPair:           GenerateKeypair(),
+		HandshakePattern:  NoiseXX,
+		PublicKeyVerifier: publicKeyVerifier,
 	}
 	serverConfig := Config{
-		keyPair:          GenerateKeypair(),
-		handshakePattern: NoiseXX,
+		KeyPair:          GenerateKeypair(),
+		HandshakePattern: NoiseXX,
 	}
 
 	// get a Noise.listener
@@ -73,16 +73,16 @@ func TestNoiseN(t *testing.T) {
 
 	// init
 	serverConfig := Config{
-		keyPair:          GenerateKeypair(),
-		handshakePattern: NoiseN,
+		KeyPair:          GenerateKeypair(),
+		HandshakePattern: NoiseN,
 	}
 
 	remoteKey := new(keyPair)
-	copy(remoteKey.publicKey[:], serverConfig.keyPair.publicKey[:])
+	copy(remoteKey.publicKey[:], serverConfig.KeyPair.publicKey[:])
 	clientConfig := Config{
-		keyPair:          GenerateKeypair(),
-		handshakePattern: NoiseN,
-		remoteKey:        remoteKey,
+		KeyPair:          GenerateKeypair(),
+		HandshakePattern: NoiseN,
+		RemoteKey:        remoteKey,
 	}
 
 	// get a Noise.listener

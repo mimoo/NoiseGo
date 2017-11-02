@@ -33,6 +33,9 @@ type keyPair struct {
 	publicKey  [32]byte
 }
 
+//
+// GenerateKeyPair creates a X25519 keyPair.
+//
 func GenerateKeypair() *keyPair {
 
 	var keyPair keyPair
