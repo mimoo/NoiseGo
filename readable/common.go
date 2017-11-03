@@ -26,10 +26,10 @@ type Config struct {
 	// the handshake, this proof is MANDATORY.
 	StaticPublicKeyProof []byte
 
-	HandshakePattern              noiseHandshakeType
-	Prologue                      []byte
-	KeyPair, EphemeralKeyPair     *KeyPair
-	RemoteKey, EphemeralRemoteKey *KeyPair
+	HandshakePattern noiseHandshakeType
+	Prologue         []byte
+	KeyPair          *KeyPair
+	RemoteKey        *KeyPair
 
 	// This forces the peers to write and read on a single socket. If a half-duplex protocol is used, it is imperative that the peers take turn to write and read on the socket.
 	HalfDuplex bool

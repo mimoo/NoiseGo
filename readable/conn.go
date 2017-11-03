@@ -231,7 +231,7 @@ func (c *Conn) Handshake() error {
 	}
 
 	// Noise.initialize(handshakePattern string, initiator bool, prologue []byte, s, e, rs, re *KeyPair) (h handshakeState)
-	hs := initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, c.config.EphemeralKeyPair, c.config.RemoteKey, c.config.EphemeralRemoteKey)
+	hs := initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, nil, c.config.RemoteKey, nil)
 
 	// start handshake
 	var c1, c2 *cipherState
