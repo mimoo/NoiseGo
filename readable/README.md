@@ -2,6 +2,8 @@
 
 NoiseGo is a protocol based on the [Noise protocol framework](http://noiseprotocol.org/).
 
+It is currently in beta.
+
 ## Usage
 
 The same pattern used in [crypto/tls](https://golang.org/pkg/crypto/tls/) can be used to setup a server or a client:

@@ -1,7 +1,3 @@
-/*
-	This is a readable implementation of Noise. It has not been fully tested so use at your own risks!
-*/
-
 package noise
 
 import (
@@ -28,6 +24,7 @@ const (
 
 // 4.1. DH functions
 
+// TODO: store that in *[32]byte or []byte
 type keyPair struct {
 	privateKey [32]byte
 	publicKey  [32]byte
