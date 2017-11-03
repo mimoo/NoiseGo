@@ -1,10 +1,13 @@
-# NoiseGo
+# Noise
 
-NoiseGo is a protocol based on the [Noise protocol framework](http://noiseprotocol.org/).
+The `noise` package contained in this folder is a plug-and-play secure protocol
+based on the [Noise protocol framework](http://noiseprotocol.org/). It has been
+implemented following the same patterns used in
+[crypto/tls](https://golang.org/pkg/crypto/tls/).
+
+This software is currently in beta.
 
 ## Usage
-
-The same pattern used in [crypto/tls](https://golang.org/pkg/crypto/tls/) can be used to setup a server or a client:
 
 **Server:**
 

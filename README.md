@@ -2,15 +2,9 @@
 
 ![disco](http://i.imgur.com/4a9upuk.jpg)
 
-This is a **readable** implementation of the [Noise Protocol Framework](http://noiseprotocol.org/).
+This folder contains two things:
 
-I have tried to respect the Noise specification as much as possible.
+* [readable/](/readable) contains a Noise protocol built in Go from the [Noise Protocol Framework](http://noiseprotocol.org/). It has a minimal set of changes that make it works over UDP and allows you to verify public keys if they were signed by a trusted root key.
+* [disco/](/disco) contains an extension of the Noise protocol that makes use of the [Strobe protocol framework](https://www.cryptologie.net/article/416/the-strobe-protocol-framework/). It will most likely move to a different repo at some point.
 
-Note that this is highly experimental and it has not been thoroughly tested.
-
-I also had to deviate from the specification when naming things because Golang:
-
-* doesn't use snake_case, but Noise does.
-* capitalizes function names to make them public, Noise does it for different reasons.
-
-At the moment this repository also contains an experimental merge of Noise and Strobe called Disco. [Check the /disco folder](/disco).
+Note that these two projects are in beta, and you should not use them in production.
