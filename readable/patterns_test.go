@@ -2,11 +2,23 @@ package noise
 
 import (
 	"bytes"
+	"crypto/rand"
 	"testing"
+
+	"golang.org/x/crypto/ed25519"
 )
 
-func publicKeyVerifier([]byte) bool {
-	return true
+var rootKey struct {
+	privateKey ed25519.PrivateKey
+	publicKey  ed25519.PublicKey
+}
+
+var publicKeyVerifier func([]byte, []byte) bool
+
+func init() {
+	rootKey.publicKey, rootKey.privateKey, _ = ed25519.GenerateKey(rand.Reader)
+
+	publicKeyVerifier = CreatePublicKeyVerifier(rootKey.publicKey)
 }
 
 func TestNoiseKK(t *testing.T) {
@@ -33,7 +45,7 @@ func TestNoiseKK(t *testing.T) {
 	// get a Noise.listener
 	listener, err := Listen("tcp", "127.0.0.1:0", &serverConfig) // port 0 will find out a free port
 	if err != nil {
-		t.Error("cannot setup a listener on localhost:", err)
+		t.Fatal("cannot setup a listener on localhost:", err)
 	}
 	addr := listener.Addr().String()
 
@@ -41,19 +53,19 @@ func TestNoiseKK(t *testing.T) {
 	go func() {
 		serverSocket, err := listener.Accept()
 		if err != nil {
-			t.Error("a server cannot accept()")
+			t.Fatal("a server cannot accept()")
 		}
 		var buf [100]byte
 		n, err := serverSocket.Read(buf[:])
 		if err != nil {
-			t.Error("server can't read on socket")
+			t.Fatal("server can't read on socket")
 		}
 		if !bytes.Equal(buf[:n], []byte("hello")) {
-			t.Error("client message failed")
+			t.Fatal("client message failed")
 		}
 
 		if _, err = serverSocket.Write([]byte("ca va?")); err != nil {
-			t.Error("server can't write on socket")
+			t.Fatal("server can't write on socket")
 		}
 
 	}()
@@ -61,19 +73,19 @@ func TestNoiseKK(t *testing.T) {
 	// Run the client
 	clientSocket, err := Dial("tcp", addr, &clientConfig)
 	if err != nil {
-		t.Error("client can't connect to server", err)
+		t.Fatal("client can't connect to server", err)
 	}
 	_, err = clientSocket.Write([]byte("hello"))
 	if err != nil {
-		t.Error("client can't write on socket")
+		t.Fatal("client can't write on socket")
 	}
 	var buf [100]byte
 	n, err := clientSocket.Read(buf[:])
 	if err != nil {
-		t.Error("client can't read server's answer")
+		t.Fatal("client can't read server's answer")
 	}
 	if !bytes.Equal(buf[:n], []byte("ca va?")) {
-		t.Error("server message failed")
+		t.Fatal("server message failed")
 	}
 }
 
@@ -99,7 +111,7 @@ func TestNoiseNK(t *testing.T) {
 	// get a Noise.listener
 	listener, err := Listen("tcp", "127.0.0.1:0", &serverConfig) // port 0 will find out a free port
 	if err != nil {
-		t.Error("cannot setup a listener on localhost:", err)
+		t.Fatal("cannot setup a listener on localhost:", err)
 	}
 	addr := listener.Addr().String()
 
@@ -107,19 +119,19 @@ func TestNoiseNK(t *testing.T) {
 	go func() {
 		serverSocket, err := listener.Accept()
 		if err != nil {
-			t.Error("a server cannot accept()")
+			t.Fatal("a server cannot accept()")
 		}
 		var buf [100]byte
 		n, err := serverSocket.Read(buf[:])
 		if err != nil {
-			t.Error("server can't read on socket")
+			t.Fatal("server can't read on socket")
 		}
 		if !bytes.Equal(buf[:n], []byte("hello")) {
-			t.Error("client message failed")
+			t.Fatal("client message failed")
 		}
 
 		if _, err = serverSocket.Write([]byte("ca va?")); err != nil {
-			t.Error("server can't write on socket")
+			t.Fatal("server can't write on socket")
 		}
 
 	}()
@@ -127,39 +139,44 @@ func TestNoiseNK(t *testing.T) {
 	// Run the client
 	clientSocket, err := Dial("tcp", addr, &clientConfig)
 	if err != nil {
-		t.Error("client can't connect to server", err)
+		t.Fatal("client can't connect to server", err)
 	}
 	_, err = clientSocket.Write([]byte("hello"))
 	if err != nil {
-		t.Error("client can't write on socket")
+		t.Fatal("client can't write on socket")
 	}
 	var buf [100]byte
 	n, err := clientSocket.Read(buf[:])
 	if err != nil {
-		t.Error("client can't read server's answer")
+		t.Fatal("client can't read server's answer")
 	}
 	if !bytes.Equal(buf[:n], []byte("ca va?")) {
-		t.Error("server message failed")
+		t.Fatal("server message failed")
 	}
 }
 
 func TestNoiseXX(t *testing.T) {
 
 	// init
+	clientKeyPair := GenerateKeypair()
 	clientConfig := Config{
-		KeyPair:           GenerateKeypair(),
-		HandshakePattern:  Noise_XX,
-		PublicKeyVerifier: publicKeyVerifier,
+		KeyPair:              clientKeyPair,
+		HandshakePattern:     Noise_XX,
+		PublicKeyVerifier:    publicKeyVerifier,
+		StaticPublicKeyProof: CreateStaticPublicKeyProof(rootKey.privateKey, clientKeyPair),
 	}
+	serverKeyPair := GenerateKeypair()
 	serverConfig := Config{
-		KeyPair:          GenerateKeypair(),
-		HandshakePattern: Noise_XX,
+		KeyPair:              serverKeyPair,
+		HandshakePattern:     Noise_XX,
+		PublicKeyVerifier:    publicKeyVerifier,
+		StaticPublicKeyProof: CreateStaticPublicKeyProof(rootKey.privateKey, serverKeyPair),
 	}
 
 	// get a Noise.listener
 	listener, err := Listen("tcp", "127.0.0.1:0", &serverConfig) // port 0 will find out a free port
 	if err != nil {
-		t.Error("cannot setup a listener on localhost:", err)
+		t.Fatal("cannot setup a listener on localhost:", err)
 	}
 	addr := listener.Addr().String()
 
@@ -167,19 +184,19 @@ func TestNoiseXX(t *testing.T) {
 	go func() {
 		serverSocket, err := listener.Accept()
 		if err != nil {
-			t.Error("a server cannot accept()")
+			t.Fatal("a server cannot accept()")
 		}
 		var buf [100]byte
 		n, err := serverSocket.Read(buf[:])
 		if err != nil {
-			t.Error("server can't read on socket")
+			t.Fatal("server can't read on socket")
 		}
 		if !bytes.Equal(buf[:n], []byte("hello")) {
-			t.Error("client message failed")
+			t.Fatal("client message failed")
 		}
 
 		if _, err = serverSocket.Write([]byte("ca va?")); err != nil {
-			t.Error("server can't write on socket")
+			t.Fatal("server can't write on socket")
 		}
 
 	}()
@@ -187,19 +204,19 @@ func TestNoiseXX(t *testing.T) {
 	// Run the client
 	clientSocket, err := Dial("tcp", addr, &clientConfig)
 	if err != nil {
-		t.Error("client can't connect to server", err)
+		t.Fatal("client can't connect to server", err)
 	}
 	_, err = clientSocket.Write([]byte("hello"))
 	if err != nil {
-		t.Error("client can't write on socket")
+		t.Fatal("client can't write on socket")
 	}
 	var buf [100]byte
 	n, err := clientSocket.Read(buf[:])
 	if err != nil {
-		t.Error("client can't read server's answer")
+		t.Fatal("client can't read server's answer")
 	}
 	if !bytes.Equal(buf[:n], []byte("ca va?")) {
-		t.Error("server message failed")
+		t.Fatal("server message failed")
 	}
 }
 
@@ -223,7 +240,7 @@ func TestNoiseN(t *testing.T) {
 	// get a Noise.listener
 	listener, err := Listen("tcp", "127.0.0.1:0", &serverConfig) // port 0 will find out a free port
 	if err != nil {
-		t.Error("cannot setup a listener on localhost:", err)
+		t.Fatal("cannot setup a listener on localhost:", err)
 	}
 	addr := listener.Addr().String()
 
@@ -231,20 +248,20 @@ func TestNoiseN(t *testing.T) {
 	go func() {
 		serverSocket, err2 := listener.Accept()
 		if err2 != nil {
-			t.Error("a server cannot accept()")
+			t.Fatal("a server cannot accept()")
 		}
 		var buf [100]byte
 		n, err2 := serverSocket.Read(buf[:])
 		if err2 != nil {
-			t.Error("server can't read on socket")
+			t.Fatal("server can't read on socket")
 		}
 		if !bytes.Equal(buf[:n], []byte("hello")) {
-			t.Error("client message failed")
+			t.Fatal("client message failed")
 		}
 
 		/* TODO: test that this fails
 		if _, err = serverSocket.Write([]byte("ca va?")); err != nil {
-			t.Error("server can't write on socket")
+			t.Fatal("server can't write on socket")
 		}
 		*/
 
@@ -253,10 +270,10 @@ func TestNoiseN(t *testing.T) {
 	// Run the client
 	clientSocket, err := Dial("tcp", addr, &clientConfig)
 	if err != nil {
-		t.Error("client can't connect to server")
+		t.Fatal("client can't connect to server")
 	}
 	_, err = clientSocket.Write([]byte("hello"))
 	if err != nil {
-		t.Error("client can't write on socket")
+		t.Fatal("client can't write on socket")
 	}
 }

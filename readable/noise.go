@@ -192,6 +192,7 @@ func (s symmetricState) Split() (c1, c2 *cipherState) {
 //
 
 type handshakeState struct {
+	// the symmetricState object
 	symmetricState symmetricState
 	/* Empty is a special value which indicates the variable has not yet been initialized.
 	we'll use keyPair.privateKey = 0 as Empty
@@ -201,10 +202,18 @@ type handshakeState struct {
 	rs keyPair // The remote party's static public key
 	re keyPair // The remote party's ephemeral public key
 
-	initiator       bool             // A boolean indicating the initiator or responder role.
-	messagePatterns []messagePattern // A sequence of message patterns. Each message pattern is a sequence of tokens from the set ("e", "s", "ee", "es", "se", "ss")
+	// A boolean indicating the initiator or responder role.
+	initiator bool
+	// A sequence of message pattern. Each message pattern is a sequence
+	// of tokens from the set ("e", "s", "ee", "es", "se", "ss")
+	messagePatterns []messagePattern
 
-	shouldWrite bool // A boolean indicating if the role of the peer is to WriteMessage or ReadMessage
+	// A boolean indicating if the role of the peer is to WriteMessage
+	// or ReadMessage
+	shouldWrite bool
+
+	// for test vectors
+	debugEphemeral *keyPair
 }
 
 // This allows you to initialize a peer.
@@ -213,7 +222,7 @@ type handshakeState struct {
 // * prologue is a byte string record of anything that happened prior the Noise handshakeState
 // * s, e, rs, re are the local and remote static/ephemeral key pairs to be set (if they exist)
 // the function returns a handshakeState object.
-func Initialize(handshakeType noiseHandshakeType, initiator bool, prologue []byte, s, e, rs, re *keyPair) (h handshakeState) {
+func initialize(handshakeType noiseHandshakeType, initiator bool, prologue []byte, s, e, rs, re *keyPair) (h handshakeState) {
 
 	handshakePattern, ok := patterns[handshakeType]
 	if !ok {
@@ -285,8 +294,7 @@ func Initialize(handshakeType noiseHandshakeType, initiator bool, prologue []byt
 	return
 }
 
-// TODO: documentation
-func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1, c2 *cipherState, err error) {
+func (h *handshakeState) writeMessage(payload []byte, messageBuffer *[]byte) (c1, c2 *cipherState, err error) {
 	// is it our turn to write?
 	if !h.shouldWrite {
 		panic("Noise: unexpected call to WriteMessage should be ReadMessage")
@@ -300,7 +308,12 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 	for _, pattern := range h.messagePatterns[0] {
 
 		if pattern == token_e {
-			h.e = *GenerateKeypair()
+			// debug
+			if h.debugEphemeral != nil {
+				h.e = *h.debugEphemeral
+			} else {
+				h.e = *GenerateKeypair()
+			}
 			*messageBuffer = append(*messageBuffer, h.e.publicKey[:]...)
 			h.symmetricState.mixHash(h.e.publicKey[:])
 
@@ -362,7 +375,7 @@ func (h *handshakeState) WriteMessage(payload []byte, messageBuffer *[]byte) (c1
 
 // ReadMessage takes a byte sequence containing a Noise handshake message,
 // and a payload_buffer to write the message's plaintext payload into.
-func (h *handshakeState) ReadMessage(message []byte, payloadBuffer *[]byte) (c1, c2 *cipherState, err error) {
+func (h *handshakeState) readMessage(message []byte, payloadBuffer *[]byte) (c1, c2 *cipherState, err error) {
 	// is it our turn to read?
 	if h.shouldWrite {
 		panic("Noise: unexpected call to ReadMessage should be WriteMessage")

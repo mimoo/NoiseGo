@@ -1,6 +1,9 @@
 package noise
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+)
 
 //
 // Should probably have all the tls.conn_test right here
@@ -8,17 +11,22 @@ import "testing"
 // then TLS kind of tests follow
 //
 
+func verifier([]byte, []byte) bool { return true }
+
 func TestNoiseSeveralRoutines(t *testing.T) {
 
 	// init
 	clientConfig := Config{
-		KeyPair:           GenerateKeypair(),
-		HandshakePattern:  Noise_XX,
-		PublicKeyVerifier: publicKeyVerifier,
+		KeyPair:              GenerateKeypair(),
+		HandshakePattern:     Noise_XX,
+		StaticPublicKeyProof: []byte{},
+		PublicKeyVerifier:    verifier,
 	}
 	serverConfig := Config{
-		KeyPair:          GenerateKeypair(),
-		HandshakePattern: Noise_XX,
+		KeyPair:              GenerateKeypair(),
+		HandshakePattern:     Noise_XX,
+		StaticPublicKeyProof: []byte{},
+		PublicKeyVerifier:    verifier,
 	}
 
 	// get a Noise.listener
@@ -38,10 +46,14 @@ func TestNoiseSeveralRoutines(t *testing.T) {
 		var buf [100]byte
 
 		for {
-			_, err2 := serverSocket.Read(buf[:])
+			n, err2 := serverSocket.Read(buf[:])
 			if err2 != nil {
 				t.Error("server can't read on socket")
 			}
+			if !bytes.Equal(buf[:n-1], []byte("hello ")) {
+				t.Error("received message not as expected")
+			}
+
 			//fmt.Println("server received:", string(buf[:n]))
 		}
 

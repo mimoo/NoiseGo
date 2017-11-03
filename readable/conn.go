@@ -20,11 +20,17 @@ type Conn struct {
 	handshakeComplete bool
 	handshakeMutex    sync.Mutex
 
+	// Authentication thingies
+	isRemoteAuthenticated bool
+
 	// input/output
 	in, out         *cipherState
 	inLock, outLock sync.Mutex
 	inputBuffer     []byte
-	isHalfDuplex    bool
+
+	// half duplex
+	isHalfDuplex   bool
+	halfDuplexLock sync.Mutex
 }
 
 // Access to net.Conn methods.
@@ -75,8 +81,13 @@ func (c *Conn) Write(b []byte) (int, error) {
 	}
 
 	// Lock the write socket
-	c.outLock.Lock()
-	defer c.outLock.Unlock()
+	if c.isHalfDuplex {
+		c.halfDuplexLock.Lock()
+		defer c.halfDuplexLock.Unlock()
+	} else {
+		c.outLock.Lock()
+		defer c.outLock.Unlock()
+	}
 
 	// process the data in a loop
 	var n int
@@ -132,9 +143,14 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 		return
 	}
 
-	// lock the read socket
-	c.inLock.Lock()
-	defer c.inLock.Unlock()
+	// Lock the read socket
+	if c.isHalfDuplex {
+		c.halfDuplexLock.Lock()
+		defer c.halfDuplexLock.Unlock()
+	} else {
+		c.inLock.Lock()
+		defer c.inLock.Unlock()
+	}
 
 	// read whatever there is to read in the buffer
 	readSoFar := 0
@@ -215,22 +231,23 @@ func (c *Conn) Handshake() error {
 	}
 
 	// Noise.Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, rs, re *keyPair) (h handshakeState)
-	hs := Initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, c.config.EphemeralKeyPair, c.config.RemoteKey, c.config.EphemeralRemoteKey)
+	hs := initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, c.config.EphemeralKeyPair, c.config.RemoteKey, c.config.EphemeralRemoteKey)
 
 	// start handshake
 	var c1, c2 *cipherState
 	var err error
-
+	var receivedPayload []byte
 ContinueHandshake:
 	if hs.shouldWrite {
-		// we're writing the next message pattern, as well as sending any data there is to send
-		var handshakeDataToSend []byte
-		if len(c.config.HandshakeDataToSend) != 0 {
-			handshakeDataToSend = c.config.HandshakeDataToSend[0]
-			c.config.HandshakeDataToSend = c.config.HandshakeDataToSend[1:]
-		}
+		// we're writing the next message pattern
+		// if it's the message pattern and we're sending a static key, we also send a proof
+		// TODO: is this the best way of sending a proof :/ ?
 		var bufToWrite []byte
-		c1, c2, err = hs.WriteMessage(handshakeDataToSend, &bufToWrite)
+		var proof []byte
+		if len(hs.messagePatterns) <= 2 {
+			proof = c.config.StaticPublicKeyProof
+		}
+		c1, c2, err = hs.writeMessage(proof, &bufToWrite)
 		if err != nil {
 			return err
 		}
@@ -257,20 +274,11 @@ ContinueHandshake:
 			return err
 		}
 
-		var receivedPayload []byte
-		c1, c2, err = hs.ReadMessage(noiseMessage, &receivedPayload)
+		c1, c2, err = hs.readMessage(noiseMessage, &receivedPayload)
 		if err != nil {
 			return err
 		}
-		// callbacks on received data
-		if len(c.config.HandshakeReceivedDataCallBack) != 0 {
-			err = c.config.HandshakeReceivedDataCallBack[0](receivedPayload)
-			if err != nil {
-				return err
-			}
-			c.config.HandshakeReceivedDataCallBack = c.config.HandshakeReceivedDataCallBack[1:]
-		}
-
+		// TODO: do something with receivedPayload
 	}
 
 	// handshake not finished
@@ -281,6 +289,21 @@ ContinueHandshake:
 	// setup the Write and Read secure channels
 	if c1 == nil {
 		return errors.New("noise: the handshake did not return a secure channel to Write and Read from")
+	}
+
+	// Has the other peer been authenticated so far?
+	if !c.isRemoteAuthenticated && c.config.PublicKeyVerifier != nil {
+		// test if remote static key is empty
+		isRemoteStaticKeySet := byte(0)
+		for _, val := range hs.rs.publicKey {
+			isRemoteStaticKeySet |= val
+		}
+		if isRemoteStaticKeySet != 0 {
+			// a remote static key has been received. Verify it
+			if !c.config.PublicKeyVerifier(hs.rs.publicKey[:], receivedPayload) {
+				return errors.New("Noise: the received public key could not be authenticated")
+			}
+		}
 	}
 
 	// Processing the final handshake message returns two CipherState objects
@@ -294,7 +317,8 @@ ContinueHandshake:
 		}
 	} else {
 		c.isHalfDuplex = true
-		c.in = c2
+		c.in = c1
+		c.out = c1
 	}
 
 	// TODO: preserve c.hs.symmetricState.h

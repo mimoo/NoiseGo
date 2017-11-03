@@ -30,6 +30,18 @@ const (
 	// It is the responsability of the server and of the client to
 	// validate the received keys properly.
 	Noise_XX
+
+	// Not implemented
+	Noise_K
+	Noise_X
+	Noise_NN
+	Noise_KN
+	Noise_KX
+	Noise_XN
+	Noise_IN
+	Noise_XK
+	Noise_IK
+	Noise_IX
 )
 
 type token uint8

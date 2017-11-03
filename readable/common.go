@@ -18,13 +18,19 @@ const (
 )
 
 type Config struct {
-	// This is MANDATORY to verify public keys sent by the other peer
-	PublicKeyVerifier func([]byte) bool
+	// If patterns in which the remote peer sends a unknown
+	// static public key as part of the handshake, this callback is
+	// MANDATORY in order to attest validate it.
+	PublicKeyVerifier func(publicKey, proof []byte) bool
+	// If patterns in which a static public key is sent as part of
+	// the handshake, this proof is MANDATORY.
+	StaticPublicKeyProof []byte
 
 	HandshakePattern              noiseHandshakeType
 	Prologue                      []byte
-	HandshakeDataToSend           [][]byte
-	HandshakeReceivedDataCallBack []func([]byte) error
 	KeyPair, EphemeralKeyPair     *keyPair
 	RemoteKey, EphemeralRemoteKey *keyPair
+
+	// This forces the peers to write and read on a single socket. If a half-duplex protocol is used, it is imperative that the peers take turn to write and read on the socket.
+	HalfDuplex bool
 }

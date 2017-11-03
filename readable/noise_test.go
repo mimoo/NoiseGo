@@ -1,6 +1,9 @@
 package noise
 
 /*
+
+import "testing"
+
 func TestNoiseHandshake(t *testing.T) {
 
 	fmt.Println("TestNoiseHandshake")
