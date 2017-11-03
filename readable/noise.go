@@ -195,12 +195,12 @@ type handshakeState struct {
 	// the symmetricState object
 	symmetricState symmetricState
 	/* Empty is a special value which indicates the variable has not yet been initialized.
-	we'll use keyPair.privateKey = 0 as Empty
+	we'll use KeyPair.privateKey = 0 as Empty
 	*/
-	s  keyPair // The local static key pair
-	e  keyPair // The local ephemeral key pair
-	rs keyPair // The remote party's static public key
-	re keyPair // The remote party's ephemeral public key
+	s  KeyPair // The local static key pair
+	e  KeyPair // The local ephemeral key pair
+	rs KeyPair // The remote party's static public key
+	re KeyPair // The remote party's ephemeral public key
 
 	// A boolean indicating the initiator or responder role.
 	initiator bool
@@ -213,7 +213,7 @@ type handshakeState struct {
 	shouldWrite bool
 
 	// for test vectors
-	debugEphemeral *keyPair
+	debugEphemeral *KeyPair
 }
 
 // This allows you to initialize a peer.
@@ -222,7 +222,7 @@ type handshakeState struct {
 // * prologue is a byte string record of anything that happened prior the Noise handshakeState
 // * s, e, rs, re are the local and remote static/ephemeral key pairs to be set (if they exist)
 // the function returns a handshakeState object.
-func initialize(handshakeType noiseHandshakeType, initiator bool, prologue []byte, s, e, rs, re *keyPair) (h handshakeState) {
+func initialize(handshakeType noiseHandshakeType, initiator bool, prologue []byte, s, e, rs, re *KeyPair) (h handshakeState) {
 
 	handshakePattern, ok := patterns[handshakeType]
 	if !ok {
@@ -476,7 +476,7 @@ func (hs *handshakeState) clear() {
 }
 
 // TODO: is there a better way to get rid of secrets in Go?
-func (kp *keyPair) clear() {
+func (kp *KeyPair) clear() {
 	for i := 0; i < len(kp.privateKey); i++ {
 		kp.privateKey[i] = 0
 	}

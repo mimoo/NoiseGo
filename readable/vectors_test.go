@@ -120,11 +120,11 @@ N(rs):
 func Test_Noise_N_25519_ChaChaPoly_SHA256(t *testing.T) {
 	testVector := testVectors["Noise_N_25519_ChaChaPoly_SHA256"]
 	// setup initiator ephemeral
-	var e keyPair
+	var e KeyPair
 	copy(e.privateKey[:], testVector.initEphemeral)
 	curve25519.ScalarBaseMult(&e.publicKey, &e.privateKey)
 	// setup initiator remote static key
-	var rs keyPair
+	var rs KeyPair
 	copy(rs.publicKey[:], testVector.initRemoteStatic)
 	// go through handshake
 	initiator := initialize(Noise_N, true, testVector.initPrologue, nil, nil, &rs, nil)
@@ -162,23 +162,23 @@ KK(s, rs):
 func Test_Noise_KK_25519_ChaChaPoly_SHA256(t *testing.T) {
 	testVector := testVectors["Noise_KK_25519_ChaChaPoly_SHA256"]
 	// setup initiator static
-	var s keyPair
+	var s KeyPair
 	copy(s.privateKey[:], testVector.initStatic)
 	curve25519.ScalarBaseMult(&s.publicKey, &s.privateKey)
 	// setup responder static
-	var rs keyPair
+	var rs KeyPair
 	copy(rs.privateKey[:], testVector.respStatic)
 	curve25519.ScalarBaseMult(&rs.publicKey, &rs.privateKey)
 	// initialize(handshakeType, initiator, prologue, s, e, rs, re)
 	initiator := initialize(Noise_KK, true, testVector.initPrologue, &s, nil, &rs, nil)
 	responder := initialize(Noise_KK, false, testVector.respPrologue, &rs, nil, &s, nil)
 	// setup initiator ephemeral
-	var e keyPair
+	var e KeyPair
 	copy(e.privateKey[:], testVector.initEphemeral)
 	curve25519.ScalarBaseMult(&e.publicKey, &e.privateKey)
 	initiator.debugEphemeral = &e
 	// setup responder ephemeral
-	var re keyPair
+	var re KeyPair
 	copy(re.privateKey[:], testVector.respEphemeral)
 	curve25519.ScalarBaseMult(&re.publicKey, &re.privateKey)
 	responder.debugEphemeral = &re

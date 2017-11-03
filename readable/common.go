@@ -28,8 +28,8 @@ type Config struct {
 
 	HandshakePattern              noiseHandshakeType
 	Prologue                      []byte
-	KeyPair, EphemeralKeyPair     *keyPair
-	RemoteKey, EphemeralRemoteKey *keyPair
+	KeyPair, EphemeralKeyPair     *KeyPair
+	RemoteKey, EphemeralRemoteKey *KeyPair
 
 	// This forces the peers to write and read on a single socket. If a half-duplex protocol is used, it is imperative that the peers take turn to write and read on the socket.
 	HalfDuplex bool

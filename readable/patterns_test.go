@@ -34,11 +34,11 @@ func TestNoiseKK(t *testing.T) {
 	}
 
 	// set up remote keys
-	remoteKeyClient := new(keyPair)
+	remoteKeyClient := new(KeyPair)
 	copy(remoteKeyClient.publicKey[:], clientConfig.KeyPair.publicKey[:])
 	serverConfig.RemoteKey = remoteKeyClient
 
-	remoteKeyServer := new(keyPair)
+	remoteKeyServer := new(KeyPair)
 	copy(remoteKeyServer.publicKey[:], serverConfig.KeyPair.publicKey[:])
 	clientConfig.RemoteKey = remoteKeyServer
 
@@ -104,7 +104,7 @@ func TestNoiseNK(t *testing.T) {
 	}
 
 	// setup remote key
-	remoteKeyServer := new(keyPair)
+	remoteKeyServer := new(KeyPair)
 	copy(remoteKeyServer.publicKey[:], serverConfig.KeyPair.publicKey[:])
 	clientConfig.RemoteKey = remoteKeyServer
 
@@ -228,7 +228,7 @@ func TestNoiseN(t *testing.T) {
 		HandshakePattern: Noise_N,
 	}
 
-	remoteKey := new(keyPair)
+	remoteKey := new(KeyPair)
 	copy(remoteKey.publicKey[:], serverConfig.KeyPair.publicKey[:])
 
 	clientConfig := Config{

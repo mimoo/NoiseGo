@@ -1,7 +1,3 @@
-/*
-	This is a readable implementation of Noise. It has not been fully tested so use at your own risks!
-*/
-
 package noise
 
 import (
@@ -28,7 +24,8 @@ const (
 
 // 4.1. DH functions
 
-type keyPair struct {
+// TODO: store that in *[32]byte or []byte
+type KeyPair struct {
 	privateKey [32]byte
 	publicKey  [32]byte
 }
@@ -36,9 +33,9 @@ type keyPair struct {
 //
 // GenerateKeyPair creates a X25519 keyPair.
 //
-func GenerateKeypair() *keyPair {
+func GenerateKeypair() *KeyPair {
 
-	var keyPair keyPair
+	var keyPair KeyPair
 
 	if _, err := rand.Read(keyPair.privateKey[:]); err != nil {
 		// TODO: panic here really?
@@ -50,7 +47,7 @@ func GenerateKeypair() *keyPair {
 	return &keyPair
 }
 
-func dh(keyPair keyPair, publicKey [32]byte) (shared [32]byte) {
+func dh(keyPair KeyPair, publicKey [32]byte) (shared [32]byte) {
 
 	curve25519.ScalarMult(&shared, &keyPair.privateKey, &publicKey)
 

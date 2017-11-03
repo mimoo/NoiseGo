@@ -230,7 +230,7 @@ func (c *Conn) Handshake() error {
 		return nil
 	}
 
-	// Noise.Initialize(handshakePattern string, initiator bool, prologue []byte, s, e, rs, re *keyPair) (h handshakeState)
+	// Noise.initialize(handshakePattern string, initiator bool, prologue []byte, s, e, rs, re *KeyPair) (h handshakeState)
 	hs := initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, c.config.EphemeralKeyPair, c.config.RemoteKey, c.config.EphemeralRemoteKey)
 
 	// start handshake

@@ -2,10 +2,15 @@
 
 The `noise` package contained in this folder is a plug-and-play secure protocol
 based on the [Noise protocol framework](http://noiseprotocol.org/). It has been
-implemented following the same patterns used in
-[crypto/tls](https://golang.org/pkg/crypto/tls/).
+implemented following the same patterns used in [crypto/tls](https://golang.org/pkg/crypto/tls/).
 
 This software is currently in beta.
+
+## documentation
+
+Documentation can be found on [godoc](https://godoc.org/github.com/mimoo/NoiseGo/readable).
+
+Usages can be found in this README.
 
 ## Usage
 
@@ -80,13 +85,10 @@ func main() {
 }
 ```
 
-## documentation
-
-https://godoc.org/github.com/mimoo/NoiseGo/readable
-
 
 ## Todo
 
-* test this with test vectors
-* implement Noise into the net.Conn paradigm
-* implementing what I'm missing from the spec
+[~] test this with test vectors
+[x] implement Noise into the net.Conn paradigm
+[ ] implementing what I'm missing from the spec
+[ ] polish the code

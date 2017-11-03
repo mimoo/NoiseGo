@@ -218,7 +218,7 @@ func CreatePublicKeyVerifier(rootPublicKey ed25519.PublicKey) func([]byte, []byt
 // StaticPublicKeyProof sometimes required in a noise.Config
 // for peers that are sending their static public key at some
 // point during the handshake
-func CreateStaticPublicKeyProof(rootPrivateKey ed25519.PrivateKey, keyPair *keyPair) []byte {
+func CreateStaticPublicKeyProof(rootPrivateKey ed25519.PrivateKey, keyPair *KeyPair) []byte {
 
 	signature, err := rootPrivateKey.Sign(rand.Reader, keyPair.publicKey[:], crypto.Hash(0))
 	if err != nil {
@@ -307,7 +307,7 @@ func GenerateAndSaveNoiseKeyPair(NoiseKeyPairFile string) (err error) {
 // LoadNoiseKeyPair reads and parses a public/private key pair from a pair
 // of files.
 // TODO: should I require a passphrase to decrypt it?
-func LoadNoiseKeyPair(noisePrivateKeyPairFile string) (keypair *keyPair, err error) {
+func LoadNoiseKeyPair(noisePrivateKeyPairFile string) (keypair *KeyPair, err error) {
 	keyPairString, err := ioutil.ReadFile(noisePrivateKeyPairFile)
 	if err != nil {
 		return nil, err
@@ -315,7 +315,7 @@ func LoadNoiseKeyPair(noisePrivateKeyPairFile string) (keypair *keyPair, err err
 	if len(keyPairString) != 64*2 {
 		return nil, errors.New("Noise: Noise key pair file is not correctly formated")
 	}
-	var keyPair keyPair
+	var keyPair KeyPair
 	_, err = hex.Decode(keyPair.privateKey[:], keyPairString[:64])
 	if err != nil {
 		return nil, err
