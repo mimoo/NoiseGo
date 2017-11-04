@@ -6,7 +6,7 @@ implemented following the same patterns used in [crypto/tls](https://golang.org/
 
 This has use cases close to TLS: it encrypts communications between a client and a server.
 
-This software is currently in beta.
+**This software is currently in beta. You are advised not to use it in production.**
 
 ## documentation
 
