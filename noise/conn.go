@@ -233,8 +233,11 @@ func (c *Conn) Handshake() error {
 	// Noise.initialize(handshakePattern string, initiator bool, prologue []byte, s, e, rs, re *KeyPair) (h handshakeState)
 	var remoteKeyPair *KeyPair
 	if c.config.RemoteKey != nil {
+		if len(c.config.RemoteKey) != 32 {
+			return errors.New("Noise: the provided remote key is not 32-byte.")
+		}
 		remoteKeyPair = &KeyPair{}
-		copy(remoteKeyPair.PublicKey[:], c.config.RemoteKey[:])
+		copy(remoteKeyPair.PublicKey[:], c.config.RemoteKey)
 	}
 	hs := initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, nil, remoteKeyPair, nil)
 

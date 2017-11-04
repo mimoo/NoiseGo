@@ -43,7 +43,7 @@ to know what are the possible fields.
 type Config struct {
   HandshakePattern noiseHandshakeType
 	KeyPair          *KeyPair
-	RemoteKey        *[32]byte
+	RemoteKey        []byte
 	Prologue         []byte
 	StaticPublicKeyProof []byte
 	PublicKeyVerifier func(publicKey, proof []byte) bool
@@ -103,74 +103,86 @@ and the server's key is known to the client in advance.
 ```go
 package main
 
-import(
-  "fmt"
-  noise "github.com/mimoo/NoiseGo/readble"
+import (
+	"fmt"
+
+	"github.com/mimoo/NoiseGo/noise"
 )
 
 func main() {
 
-  serverKeyPair := noise.GenerateKeypair()
+	serverKeyPair := noise.GenerateKeypair(nil)
 
-  serverConfig := noise.Config{
-    HandshakePattern: noise.Noise_NK,
-    KeyPair:          serverKeyPair,
-  }
+	serverConfig := noise.Config{
+		HandshakePattern: noise.Noise_NK,
+		KeyPair:          serverKeyPair,
+	}
 
-  listener, err := noise.Listen("tcp", "127.0.0.1:6666", &serverConfig)
-  if err != nil {
-    panic("cannot setup a listener on localhost:", err)
-  }
-  addr := listener.Addr().String()
-  fmt.Println("listening on", addr)
+	listener, err := noise.Listen("tcp", "127.0.0.1:6666", &serverConfig)
+	if err != nil {
+		fmt.Println("cannot setup a listener on localhost:", err)
+		return
+	}
+	addr := listener.Addr().String()
+	fmt.Println("listening on:", addr)
+	fmt.Println("server's public key:", serverKeyPair.ExportPublicKey())
 
-  server, err := listener.Accept()
-  if err != nil {
-    t.Error("server cannot accept()")
-  }
-  defer server.Close()
+	server, err := listener.Accept()
+	if err != nil {
+		fmt.Println("server cannot accept()")
+		return
+	}
+	defer server.Close()
 
-  var buf := make([]byte, 100)
-  for {
-    _, err := server.Read(buf)
-    if err != nil {
-      fmt.Println("server can't read on socket", err)
-    }
-    fmt.Println("server received some data:", string(buf[:n]))
-  }
+	buf := make([]byte, 100)
+	for {
+		n, err := server.Read(buf)
+		if err != nil {
+			fmt.Println("server can't read on socket", err)
+			return
+		}
+		fmt.Println("server received some data:", string(buf[:n]))
+	}
 }
 ```
 
 ### Client
 
-The client can simply use the `Dial()` paradigm:
+The client can simply use the `Dial()` paradigm using the public key of the server:
 
 ```go
 package main
 
-import(
-  "fmt"
-  noise "github.com/mimoo/NoiseGo/readble"
+import (
+	"encoding/hex"
+	"fmt"
+
+	"github.com/mimoo/NoiseGo/noise"
 )
 
 func main() {
+  // replace this with the server's public key!
+	serverKey, _ := hex.DecodeString("e424214ab16f56def7778e9a3d36d891221c4f5b38c8b2679ccbdaed5c27e735")
+	clientConfig := noise.Config{
+		HandshakePattern: noise.Noise_NK,
+		RemoteKey:        serverKey,
+	}
 
-  clientConfig := noise.Config{
-    HandshakePattern:  noise.Noise_NK,
-    RemoteKey:         []byte{0x01, 0x02, ...}, // replace this with the server's public key
-  }
+	client, err := noise.Dial("tcp", "127.0.0.1:6666", &clientConfig)
+	if err != nil {
+		fmt.Println("client can't connect to server:", err)
+		return
+	}
+	defer client.Close()
 
-  client, err := noise.Dial("tcp", "127.0.0.0:6666", &clientConfig)
-  if err != nil {
-    fmt.Println("client can't connect to server:", err)
-    return
-  }
-  defer client.Close()
-
-  _, err = client.Write([]byte("hello"))
-  if err != nil {
-    fmt.Println("client can't write on socket:", err)
-  }
+	for {
+		var in string
+		fmt.Scanf("%s", &in)
+		_, err = client.Write([]byte(in))
+		if err != nil {
+			fmt.Println("client can't write on socket:", err)
+		}
+	}
 }
 ```
 

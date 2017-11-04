@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"math"
 
 	"golang.org/x/crypto/chacha20poly1305"
@@ -51,9 +52,9 @@ func GenerateKeypair(privateKey *[32]byte) *KeyPair {
 	return &keyPair
 }
 
-// ExportPublicKey returns the public part of a static key pair.
-func (kp KeyPair) ExportPublicKey() [32]byte {
-	return kp.PublicKey
+// ExportPublicKey returns the public part in hex format of a static key pair.
+func (kp KeyPair) ExportPublicKey() string {
+	return hex.EncodeToString(kp.PublicKey[:])
 }
 
 func dh(keyPair KeyPair, publicKey [32]byte) (shared [32]byte) {

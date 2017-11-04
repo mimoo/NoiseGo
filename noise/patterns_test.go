@@ -34,8 +34,8 @@ func TestNoiseKK(t *testing.T) {
 	}
 
 	// set up remote keys
-	serverConfig.RemoteKey = &(clientConfig.KeyPair.PublicKey)
-	clientConfig.RemoteKey = &(serverConfig.KeyPair.PublicKey)
+	serverConfig.RemoteKey = clientConfig.KeyPair.PublicKey[:]
+	clientConfig.RemoteKey = serverConfig.KeyPair.PublicKey[:]
 
 	// get a Noise.listener
 	listener, err := Listen("tcp", "127.0.0.1:0", &serverConfig) // port 0 will find out a free port
@@ -99,7 +99,7 @@ func TestNoiseNK(t *testing.T) {
 	}
 
 	// setup remote key
-	clientConfig.RemoteKey = &(serverConfig.KeyPair.PublicKey)
+	clientConfig.RemoteKey = serverConfig.KeyPair.PublicKey[:]
 
 	// get a Noise.listener
 	listener, err := Listen("tcp", "127.0.0.1:0", &serverConfig) // port 0 will find out a free port
@@ -224,7 +224,7 @@ func TestNoiseN(t *testing.T) {
 	clientConfig := Config{
 		KeyPair:          GenerateKeypair(nil),
 		HandshakePattern: Noise_N,
-		RemoteKey:        &(serverConfig.KeyPair.PublicKey),
+		RemoteKey:        serverConfig.KeyPair.PublicKey[:],
 	}
 
 	// get a Noise.listener

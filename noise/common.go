@@ -21,7 +21,7 @@ type Config struct {
 	// the current peer's keyPair
 	KeyPair *KeyPair
 	// the other peer's public key
-	RemoteKey *[32]byte
+	RemoteKey []byte
 	// any messages that the client and the server previously exchanged in clear
 	Prologue []byte
 	// if the chosen handshake pattern requires the current peer to send a static
