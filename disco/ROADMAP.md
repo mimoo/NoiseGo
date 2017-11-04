@@ -16,9 +16,9 @@ Disco relies on a [Strobe implementation in Go](https://github.com/mimoo/StrobeG
 Disco relies on the [Noise protocol framework](http://noiseprotocol.org/), which has not been fully implemented nor tested.
 
 - [ ] Implement Noise's Pre-Shared Key in Disco and NoiseGo.
-- [ ] Implement Noise's Pre-Messages in Disco and NoiseGo
 - [ ] Implement Noise's Other Things (what are they?) in Disco and NoiseGo.
-- [ ] Test these things in NoiseGo (Test vectors, interact with other libraries, etc...) to make sure the Noise parts are correct
+- [~] Test these things in NoiseGo (Test vectors, interact with other libraries, etc...) to make sure the Noise parts are correct
+- [x] Implement Noise with Go `net.Conn` interface
 
 **Disco**
 

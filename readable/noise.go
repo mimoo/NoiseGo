@@ -258,12 +258,12 @@ func initialize(handshakeType noiseHandshakeType, initiator bool, prologue []byt
 				if s == nil {
 					panic("Noise: the static key of the client should be set")
 				}
-				h.symmetricState.mixHash(s.publicKey[:])
+				h.symmetricState.mixHash(s.PublicKey[:])
 			} else {
 				if rs == nil {
 					panic("Noise: the remote static key of the server should be set")
 				}
-				h.symmetricState.mixHash(rs.publicKey[:])
+				h.symmetricState.mixHash(rs.PublicKey[:])
 			}
 		} else {
 			panic("Noise: token of pre-message not supported")
@@ -277,12 +277,12 @@ func initialize(handshakeType noiseHandshakeType, initiator bool, prologue []byt
 				if rs == nil {
 					panic("Noise: the remote static key of the client should be set")
 				}
-				h.symmetricState.mixHash(rs.publicKey[:])
+				h.symmetricState.mixHash(rs.PublicKey[:])
 			} else {
 				if s == nil {
 					panic("Noise: the static key of the server should be set")
 				}
-				h.symmetricState.mixHash(s.publicKey[:])
+				h.symmetricState.mixHash(s.PublicKey[:])
 			}
 		} else {
 			panic("Noise: token of pre-message not supported")
@@ -314,36 +314,36 @@ func (h *handshakeState) writeMessage(payload []byte, messageBuffer *[]byte) (c1
 			} else {
 				h.e = *GenerateKeypair()
 			}
-			*messageBuffer = append(*messageBuffer, h.e.publicKey[:]...)
-			h.symmetricState.mixHash(h.e.publicKey[:])
+			*messageBuffer = append(*messageBuffer, h.e.PublicKey[:]...)
+			h.symmetricState.mixHash(h.e.PublicKey[:])
 
 		} else if pattern == token_s {
 			var ciphertext []byte
-			ciphertext, err = h.symmetricState.encryptAndHash(h.s.publicKey[:])
+			ciphertext, err = h.symmetricState.encryptAndHash(h.s.PublicKey[:])
 			if err != nil {
 				return
 			}
 			*messageBuffer = append(*messageBuffer, ciphertext...)
 
 		} else if pattern == token_ee {
-			h.symmetricState.mixKey(dh(h.e, h.re.publicKey))
+			h.symmetricState.mixKey(dh(h.e, h.re.PublicKey))
 
 		} else if pattern == token_es {
 			if h.initiator {
-				h.symmetricState.mixKey(dh(h.e, h.rs.publicKey))
+				h.symmetricState.mixKey(dh(h.e, h.rs.PublicKey))
 			} else {
-				h.symmetricState.mixKey(dh(h.s, h.re.publicKey))
+				h.symmetricState.mixKey(dh(h.s, h.re.PublicKey))
 			}
 
 		} else if pattern == token_se {
 			if h.initiator {
-				h.symmetricState.mixKey(dh(h.s, h.re.publicKey))
+				h.symmetricState.mixKey(dh(h.s, h.re.PublicKey))
 			} else {
-				h.symmetricState.mixKey(dh(h.e, h.rs.publicKey))
+				h.symmetricState.mixKey(dh(h.e, h.rs.PublicKey))
 			}
 
 		} else if pattern == token_ss {
-			h.symmetricState.mixKey(dh(h.s, h.rs.publicKey))
+			h.symmetricState.mixKey(dh(h.s, h.rs.PublicKey))
 		} else {
 			panic("Noise: token not recognized")
 		}
@@ -394,9 +394,9 @@ func (h *handshakeState) readMessage(message []byte, payloadBuffer *[]byte) (c1,
 			if len(message[offset:]) < dhLen {
 				return nil, nil, errors.New("Noise: the received ephemeral key is to short")
 			}
-			copy(h.re.publicKey[:], message[offset:offset+dhLen])
+			copy(h.re.PublicKey[:], message[offset:offset+dhLen])
 			offset += dhLen
-			h.symmetricState.mixHash(h.re.publicKey[:])
+			h.symmetricState.mixHash(h.re.PublicKey[:])
 
 		} else if pattern == token_s {
 
@@ -413,28 +413,28 @@ func (h *handshakeState) readMessage(message []byte, payloadBuffer *[]byte) (c1,
 				return
 			}
 			// if we already know the remote static, compare
-			copy(h.rs.publicKey[:], plaintext)
+			copy(h.rs.PublicKey[:], plaintext)
 			offset += dhLen + tagLen
 
 		} else if pattern == token_ee {
-			h.symmetricState.mixKey(dh(h.e, h.re.publicKey))
+			h.symmetricState.mixKey(dh(h.e, h.re.PublicKey))
 
 		} else if pattern == token_es {
 			if h.initiator {
-				h.symmetricState.mixKey(dh(h.e, h.rs.publicKey))
+				h.symmetricState.mixKey(dh(h.e, h.rs.PublicKey))
 			} else {
-				h.symmetricState.mixKey(dh(h.s, h.re.publicKey))
+				h.symmetricState.mixKey(dh(h.s, h.re.PublicKey))
 			}
 
 		} else if pattern == token_se {
 			if h.initiator {
-				h.symmetricState.mixKey(dh(h.s, h.re.publicKey))
+				h.symmetricState.mixKey(dh(h.s, h.re.PublicKey))
 			} else {
-				h.symmetricState.mixKey(dh(h.e, h.rs.publicKey))
+				h.symmetricState.mixKey(dh(h.e, h.rs.PublicKey))
 			}
 
 		} else if pattern == token_ss {
-			h.symmetricState.mixKey(dh(h.s, h.rs.publicKey))
+			h.symmetricState.mixKey(dh(h.s, h.rs.PublicKey))
 		} else {
 			panic("Noise: token not recognized")
 		}
@@ -477,10 +477,10 @@ func (hs *handshakeState) clear() {
 
 // TODO: is there a better way to get rid of secrets in Go?
 func (kp *KeyPair) clear() {
-	for i := 0; i < len(kp.privateKey); i++ {
-		kp.privateKey[i] = 0
+	for i := 0; i < len(kp.PrivateKey); i++ {
+		kp.PrivateKey[i] = 0
 	}
-	for i := 0; i < len(kp.publicKey); i++ {
-		kp.publicKey[i] = 0
+	for i := 0; i < len(kp.PublicKey); i++ {
+		kp.PublicKey[i] = 0
 	}
 }

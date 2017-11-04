@@ -231,7 +231,12 @@ func (c *Conn) Handshake() error {
 	}
 
 	// Noise.initialize(handshakePattern string, initiator bool, prologue []byte, s, e, rs, re *KeyPair) (h handshakeState)
-	hs := initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, nil, c.config.RemoteKey, nil)
+	var remoteKeyPair *KeyPair
+	if c.config.RemoteKey != nil {
+		remoteKeyPair = &KeyPair{}
+		copy(remoteKeyPair.PublicKey[:], c.config.RemoteKey[:])
+	}
+	hs := initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, nil, remoteKeyPair, nil)
 
 	// start handshake
 	var c1, c2 *cipherState
@@ -295,12 +300,12 @@ ContinueHandshake:
 	if !c.isRemoteAuthenticated && c.config.PublicKeyVerifier != nil {
 		// test if remote static key is empty
 		isRemoteStaticKeySet := byte(0)
-		for _, val := range hs.rs.publicKey {
+		for _, val := range hs.rs.PublicKey {
 			isRemoteStaticKeySet |= val
 		}
 		if isRemoteStaticKeySet != 0 {
 			// a remote static key has been received. Verify it
-			if !c.config.PublicKeyVerifier(hs.rs.publicKey[:], receivedPayload) {
+			if !c.config.PublicKeyVerifier(hs.rs.PublicKey[:], receivedPayload) {
 				return errors.New("Noise: the received public key could not be authenticated")
 			}
 		}

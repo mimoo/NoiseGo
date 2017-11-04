@@ -1,7 +1,5 @@
-/*
-	These APIs try to mimic Go TLS APIs
-*/
-
+// These Utility functions implement the net.Conn interface. Most of this code
+// was either taken directly or inspired from Go's crypto/tls package.
 package noise
 
 import (
@@ -17,7 +15,7 @@ import (
 )
 
 // Server returns a new Noise server side connection
-// using conn as the underlying transport.
+// using net.Conn as the underlying transport.
 // The configuration config must be non-nil and must include
 // at least one certificate or else set GetCertificate.
 func Server(conn net.Conn, config *Config) *Conn {
@@ -48,29 +46,17 @@ func (l *listener) Accept() (net.Conn, error) {
 	return Server(c, l.config), nil
 }
 
-// NewListener creates a Listener which accepts connections from an inner
-// Listener and wraps each connection with Server.
-// The configuration config must be non-nil.
-func NewListener(inner net.Listener, config *Config) net.Listener {
-	// check Config
-	if config == nil {
-		panic("Noise: no Config set")
-	}
-	if err := checkRequirements(true, config); err != nil {
-		panic(err)
-	}
-
-	// create new noise.listener
-	l := new(listener)
-	l.Listener = inner
-	l.config = config
-	return l
-}
-
 // Listen creates a Noise listener accepting connections on the
 // given network address using net.Listen.
 // The configuration config must be non-nil.
 func Listen(network, laddr string, config *Config) (net.Listener, error) {
+	// check Config
+	if config == nil {
+		return nil, errors.New("Noise: no Config set")
+	}
+	if err := checkRequirements(true, config); err != nil {
+		panic(err)
+	}
 
 	// make net.Conn listen
 	l, err := net.Listen(network, laddr)
@@ -78,8 +64,11 @@ func Listen(network, laddr string, config *Config) (net.Listener, error) {
 		return nil, err
 	}
 
-	// return a new noise.listener
-	return NewListener(l, config), nil
+	// create new noise.listener
+	noiseListener := new(listener)
+	noiseListener.Listener = l
+	noiseListener.config = config
+	return noiseListener, nil
 }
 
 type timeoutError struct{}
@@ -90,8 +79,7 @@ func (timeoutError) Temporary() bool { return true }
 
 // this functions checks if at some point in the protocol
 // the peer needs to verify the other peer static public key
-// and
-// if the peer needs to provide a proof for its static public key
+// and if the peer needs to provide a proof for its static public key
 var errNoPubkeyVerifier = errors.New("Noise: no public key verifier set in Config")
 var errNoProof = errors.New("Noise: no public key proof set in Config")
 
@@ -220,7 +208,7 @@ func CreatePublicKeyVerifier(rootPublicKey ed25519.PublicKey) func([]byte, []byt
 // point during the handshake
 func CreateStaticPublicKeyProof(rootPrivateKey ed25519.PrivateKey, keyPair *KeyPair) []byte {
 
-	signature, err := rootPrivateKey.Sign(rand.Reader, keyPair.publicKey[:], crypto.Hash(0))
+	signature, err := rootPrivateKey.Sign(rand.Reader, keyPair.PublicKey[:], crypto.Hash(0))
 	if err != nil {
 		panic("Noise: can't create static public key proof")
 	}
@@ -228,12 +216,12 @@ func CreateStaticPublicKeyProof(rootPrivateKey ed25519.PrivateKey, keyPair *KeyP
 }
 
 //
-// Storage of Noise keys
+// Storage of Noise Signing Root Keys
 //
 
 // GenerateAndSaveNoiseRootKeyPair generates an ed25519 root key pair and save the private and public parts in different files.
 // TODO: should I require a passphrase and encrypt it with it?
-func GenerateAndSaveNoiseRootKeyPair(NoiseRootPrivateKey string, NoiseRootPublicKey string) (err error) {
+func GenerateAndSaveNoiseRootKeyPair(NoiseRootPrivateKeyFile string, NoiseRootPublicKeyFile string) (err error) {
 	publicKey, privateKey, _ := ed25519.GenerateKey(rand.Reader)
 
 	var publicKeyHex [32 * 2]byte
@@ -241,11 +229,11 @@ func GenerateAndSaveNoiseRootKeyPair(NoiseRootPrivateKey string, NoiseRootPublic
 	hex.Encode(publicKeyHex[:], publicKey)
 	hex.Encode(privateKeyHex[:], privateKey)
 
-	err = ioutil.WriteFile(NoiseRootPrivateKey, privateKeyHex[:], 0400)
+	err = ioutil.WriteFile(NoiseRootPrivateKeyFile, privateKeyHex[:], 0400)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(NoiseRootPublicKey, publicKeyHex[:], 0644)
+	err = ioutil.WriteFile(NoiseRootPublicKeyFile, publicKeyHex[:], 0644)
 
 	if err != nil {
 		return err
@@ -290,13 +278,17 @@ func LoadNoiseRootPrivateKey(noiseRootPrivateKey string) (rootPrivateKey ed25519
 	return privateKey, nil
 }
 
+//
+// Storage of Noise Static Keys
+//
+
 // TODO: should I require a passphrase and encrypt it with it?
 func GenerateAndSaveNoiseKeyPair(NoiseKeyPairFile string) (err error) {
 
 	keyPair := GenerateKeypair()
 	var dataToWrite [128]byte
-	hex.Encode(dataToWrite[:64], keyPair.privateKey[:])
-	hex.Encode(dataToWrite[64:], keyPair.publicKey[:])
+	hex.Encode(dataToWrite[:64], keyPair.PrivateKey[:])
+	hex.Encode(dataToWrite[64:], keyPair.PublicKey[:])
 	err = ioutil.WriteFile(NoiseKeyPairFile, dataToWrite[:], 0644)
 	if err != nil {
 		return errors.New("Noise: could not write on file at path")
@@ -316,11 +308,11 @@ func LoadNoiseKeyPair(noisePrivateKeyPairFile string) (keypair *KeyPair, err err
 		return nil, errors.New("Noise: Noise key pair file is not correctly formated")
 	}
 	var keyPair KeyPair
-	_, err = hex.Decode(keyPair.privateKey[:], keyPairString[:64])
+	_, err = hex.Decode(keyPair.PrivateKey[:], keyPairString[:64])
 	if err != nil {
 		return nil, err
 	}
-	_, err = hex.Decode(keyPair.publicKey[:], keyPairString[64:])
+	_, err = hex.Decode(keyPair.PublicKey[:], keyPairString[64:])
 	if err != nil {
 		return nil, err
 	}

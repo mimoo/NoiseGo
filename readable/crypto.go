@@ -25,37 +25,37 @@ const (
 // 4.1. DH functions
 
 // TODO: store that in *[32]byte or []byte
+// TODO: urgent, privateKey and publicKey should be public, especially if I'm expecting
+// people to manipulate them directly to fill the publicKey
+// or maybe I shouldn't allow people to do that and only make them use the utility functions?
 type KeyPair struct {
-	privateKey [32]byte
-	publicKey  [32]byte
+	PrivateKey [32]byte
+	PublicKey  [32]byte
 }
 
-//
 // GenerateKeyPair creates a X25519 keyPair.
-//
 func GenerateKeypair() *KeyPair {
 
 	var keyPair KeyPair
 
-	if _, err := rand.Read(keyPair.privateKey[:]); err != nil {
-		// TODO: panic here really?
+	if _, err := rand.Read(keyPair.PrivateKey[:]); err != nil {
 		panic(err)
 	}
 
-	curve25519.ScalarBaseMult(&keyPair.publicKey, &keyPair.privateKey)
+	curve25519.ScalarBaseMult(&keyPair.PublicKey, &keyPair.PrivateKey)
 
 	return &keyPair
 }
 
 func dh(keyPair KeyPair, publicKey [32]byte) (shared [32]byte) {
 
-	curve25519.ScalarMult(&shared, &keyPair.privateKey, &publicKey)
+	curve25519.ScalarMult(&shared, &keyPair.PrivateKey, &publicKey)
 
 	return
 }
 
 // 4.2. Cipher functions
-
+// TODO: should this really panic? decrypts return an error, this does not
 func encrypt(k [32]byte, n uint64, ad, plaintext []byte) (ciphertext []byte) {
 
 	cipher, err := chacha20poly1305.New(k[:])
