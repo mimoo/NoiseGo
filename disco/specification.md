@@ -10,7 +10,7 @@
 ### 1.1. Motivation
 
 [Noise](http://noiseprotocol.org/) is a framework for crypto protocols based on Diffie-Hellman key agreement. One of its most interesting property is that every new message depends on all the previous ones. This is done by continuously hashing messages being sent and received, as well as continuously deriving new keys based on the continuous hash and the previous keys. This interesting property stops at the end of the handshake.  
-[Strobe](http://strobe.sourceforge.io/) is a protocol framework based on a [duplex construction](http://sponge.noekeon.org/). It naturally benefits from the same property, effectivelly absorbing every operation to influence the next ones. The Strobe specification is comparable to Noise, while focusing on the symmetric part of a protocol. By merging both protocols into one, Disco achieves the following goals:
+[Strobe](http://strobe.sourceforge.io/) is a protocol framework based on a [duplex construction](http://sponge.noekeon.org/). It naturally benefits from the same property, effectively absorbing every operation to influence the next ones. The Strobe specification is comparable to Noise, but focusing on the symmetric part of a protocol. By merging both protocols into one, Disco achieves the following goals:
 
 * The Noise specification can be greatly simplified by removing all the symmetric cryptographic algorithms and symmetric objects. These can be replaced by a single Strobe object.
 * Implementations of Noise with the Disco extension will consequently greatly benefit from this simplification, allowing for a drastic reduction of the codebase, facilitating security audits.
@@ -122,5 +122,3 @@ To enable this, Strobe supports a `RATCHET()` function.
 ## 6. Security Considerations
 
 The same security considerations that apply to Noise and Strobe are to be considered.
-
-

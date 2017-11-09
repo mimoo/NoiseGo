@@ -268,12 +268,12 @@ func Test_Noise_XX_25519_ChaChaPoly_SHA256(t *testing.T) {
 }
 
 func goThroughTestVectors(t *testing.T, initiator, responder *handshakeState, messages []message) {
+	whoseTurnIsIt := true
 	handshakeComplete := false
-	postHandshakeClientWriting := true
 	var initiator_c1, initiator_c2, responder_c1, responder_c2 *cipherState
 	for _, message := range messages {
 		if !handshakeComplete {
-			if initiator.shouldWrite {
+			if whoseTurnIsIt {
 				var ciphertext []byte
 				var plaintext []byte
 				initiator_c1, initiator_c2, _ = initiator.writeMessage(message.payload, &ciphertext)
@@ -286,7 +286,6 @@ func goThroughTestVectors(t *testing.T, initiator, responder *handshakeState, me
 				}
 				if initiator_c1 != nil {
 					handshakeComplete = true
-					fmt.Println("handshake completed!")
 					if initiator_c1.k != responder_c1.k || initiator_c2.k != responder_c2.k {
 						t.Fatal("c1 and c2 do not match")
 					}
@@ -304,14 +303,14 @@ func goThroughTestVectors(t *testing.T, initiator, responder *handshakeState, me
 				}
 				if initiator_c1 != nil {
 					handshakeComplete = true
-					fmt.Println("handshake completed!")
 					if initiator_c1.k != responder_c1.k || initiator_c2.k != responder_c2.k {
 						t.Fatal("c1 and c2 do not match")
 					}
 				}
 			}
+			whoseTurnIsIt = !whoseTurnIsIt
 		} else {
-			if postHandshakeClientWriting {
+			if whoseTurnIsIt {
 				ciphertext, err := initiator_c1.encryptWithAd([]byte{}, message.payload)
 				if err != nil {
 					t.Fatal("message failed to encrypt", err)
@@ -326,7 +325,6 @@ func goThroughTestVectors(t *testing.T, initiator, responder *handshakeState, me
 				if !bytes.Equal(message.payload, plaintext) {
 					t.Fatal("bad decryption")
 				}
-				postHandshakeClientWriting = false
 			} else {
 				ciphertext, err := responder_c2.encryptWithAd([]byte{}, message.payload)
 				if err != nil {
@@ -342,8 +340,8 @@ func goThroughTestVectors(t *testing.T, initiator, responder *handshakeState, me
 				if !bytes.Equal(message.payload, plaintext) {
 					t.Fatal("bad decryption")
 				}
-				postHandshakeClientWriting = true
 			}
+			whoseTurnIsIt = !whoseTurnIsIt
 		}
 	}
 }

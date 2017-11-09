@@ -3,7 +3,6 @@ package noise
 import (
 	"bytes"
 	"crypto/rand"
-	"fmt"
 	"testing"
 
 	"github.com/flynn/noise"
@@ -55,11 +54,11 @@ func TestFlynnNoise(t *testing.T) {
 	var bufferInitiator, bufferResponder []byte
 
 	// 1. initiator "->e" - sends a pubkey in clear + "salut" in clear.
-	fmt.Println(" initiator ->e")
+	t.Log(" initiator ->e")
 	initiator.writeMessage([]byte("salut"), &bufferInitiator)
 
 	// 1. responder "->e" - receives the public key, decrypts "salut"
-	fmt.Println(" responder ->e")
+	t.Log(" responder ->e")
 	bufferResponder, _, _, err := hsR.ReadMessage(nil, bufferInitiator) // will write "E"
 
 	if err != nil {
@@ -73,11 +72,11 @@ func TestFlynnNoise(t *testing.T) {
 	}
 
 	// 2. responder "<-e, ee, s, es" - sends a public key in clear, DH, sends a static key encrypted
-	fmt.Println(" responder <-e, ee, s, es")
+	t.Log(" responder <-e, ee, s, es")
 	bufferResponder, _, _ = hsR.WriteMessage(nil, []byte("ca va ?"))
 
 	// 2. initiator "<-e, ee, s, es" -
-	fmt.Println(" initiator <-e, ee, s, es")
+	t.Log(" initiator <-e, ee, s, es")
 	bufferInitiator = bufferInitiator[:0]
 	initiator.readMessage(bufferResponder, &bufferInitiator)
 
@@ -87,7 +86,7 @@ func TestFlynnNoise(t *testing.T) {
 	}
 
 	// 3. "->s, se" - send last trip
-	fmt.Println(" initiator ->s, se")
+	t.Log(" initiator ->s, se")
 	bufferInitiator = bufferInitiator[:0]
 	initiatorCipherWrite, initiatorCipherRead, err := initiator.writeMessage([]byte("oui et toi ?"), &bufferInitiator)
 
@@ -97,7 +96,7 @@ func TestFlynnNoise(t *testing.T) {
 	}
 
 	// 3. "->s, se" - receive last trip
-	fmt.Println(" responder ->s, se")
+	t.Log(" responder ->s, se")
 	bufferResponder, responderCipherRead, responderCipherWrite, err := hsR.ReadMessage(nil, bufferInitiator) // will write "S" then "SE"
 
 	if err != nil {
@@ -118,8 +117,7 @@ func TestFlynnNoise(t *testing.T) {
 	}
 
 	plaintext1, err := responderCipherRead.Decrypt(nil, []byte{}, ciphertext1)
-
-	if !bytes.Equal(plaintext1, []byte("hello!")) {
+	if err != nil || !bytes.Equal(plaintext1, []byte("hello!")) {
 		t.Fatal("fourth message failed")
 		return
 	}
@@ -127,8 +125,7 @@ func TestFlynnNoise(t *testing.T) {
 	// Try to send a message from the responder
 	ciphertext2 := responderCipherWrite.Encrypt(nil, []byte{}, []byte("hehe, this is a longer message"))
 	plaintext2, err := initiatorCipherRead.decryptWithAd([]byte{}, ciphertext2)
-
-	if !bytes.Equal(plaintext2, []byte("hehe, this is a longer message")) {
+	if err != nil || !bytes.Equal(plaintext2, []byte("hehe, this is a longer message")) {
 		t.Fatal("fifth message failed")
 		return
 	}

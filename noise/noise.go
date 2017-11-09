@@ -474,11 +474,11 @@ func (h *handshakeState) readMessage(message []byte, payloadBuffer *[]byte) (c1,
 //
 
 // TODO: is there a better way to get rid of secrets in Go?
-func (hs *handshakeState) clear() {
-	hs.s.clear()
-	hs.e.clear()
-	hs.rs.clear()
-	hs.re.clear()
+func (h *handshakeState) clear() {
+	h.s.clear()
+	h.e.clear()
+	h.rs.clear()
+	h.re.clear()
 }
 
 // TODO: is there a better way to get rid of secrets in Go?

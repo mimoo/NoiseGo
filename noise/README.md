@@ -1,4 +1,4 @@
-# Noise
+# NoisePlugAndPlay
 
 The `noise` package contained in this folder is a **plug-and-play** secure protocol based on the [Noise protocol framework](http://noiseprotocol.org/). It has been implemented following the same patterns used in [crypto/tls](https://golang.org/pkg/crypto/tls/).
 
@@ -442,15 +442,17 @@ What follows is an informal roadmap for this code.
 
 Actions that can be taken quickly:
 
-* [~] test this with test vectors
-* [x] implement Noise into the net.Conn paradigm
-* [ ] good documentation
+* [x] test this with cacophony test vectors
+* [x] implement Noise with the `net.Conn` paradigm
+* [x] write documentation
 * [ ] enforce good timeouts (by default `timeout = 0`)
 * [ ] polish the code
 * [ ] implement [NoiseSocket](http://noisesocket.com/)
+* [ ] test with [go-noiseSocket](https://github.com/go-noisesocket/noisesocket) implementation.
 
 These items need more time:
 
-* [ ] implementing pre-shared keys with Argon2?
-* [ ] fuzz? (oss-fuzz?)
-* [ ] similar library in C
+* [ ] implementing pre-shared keys with Argon2
+* [ ] fuzz the library
+* [ ] write a similar library in C
+* [ ] write a similar library in Python

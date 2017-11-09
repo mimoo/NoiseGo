@@ -241,7 +241,7 @@ func GenerateAndSaveNoiseRootKeyPair(NoiseRootPrivateKeyFile string, NoiseRootPu
 	return nil
 }
 
-// // LoadNoiseRootPublicKey reads and parses a public Root key from a
+// LoadNoiseRootPublicKey reads and parses a public Root key from a
 // file. The file contains an 32-byte ed25519 public key in hexadecimal
 func LoadNoiseRootPublicKey(noiseRootPublicKey string) (rootPublicKey ed25519.PublicKey, err error) {
 	publicKeyHex, err := ioutil.ReadFile(noiseRootPublicKey)
@@ -282,6 +282,8 @@ func LoadNoiseRootPrivateKey(noiseRootPrivateKey string) (rootPrivateKey ed25519
 // Storage of Noise Static Keys
 //
 
+// GenerateAndSaveNoiseKeyPair generates a noise key pair (X25519 key pair)
+// and saves it to a file in hexadecimal form.
 func GenerateAndSaveNoiseKeyPair(NoiseKeyPairFile string) (err error) {
 
 	// TODO: should I require a passphrase and encrypt it with it?
@@ -290,7 +292,7 @@ func GenerateAndSaveNoiseKeyPair(NoiseKeyPairFile string) (err error) {
 	var dataToWrite [128]byte
 	hex.Encode(dataToWrite[:64], keyPair.PrivateKey[:])
 	hex.Encode(dataToWrite[64:], keyPair.PublicKey[:])
-	err = ioutil.WriteFile(NoiseKeyPairFile, dataToWrite[:], 0644)
+	err = ioutil.WriteFile(NoiseKeyPairFile, dataToWrite[:], 0400)
 	if err != nil {
 		return errors.New("Noise: could not write on file at path")
 	}

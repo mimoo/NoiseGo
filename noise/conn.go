@@ -338,6 +338,11 @@ ContinueHandshake:
 	return nil
 }
 
+// IsRemoteAuthenticated can be used to check if the remote peer has been properly authenticated. It serves no real purpose for the moment as the handshake will not go through if a peer is not properly authenticated in patterns where the peer needs to be authenticated.
+func (c *Conn) IsRemoteAuthenticated() bool {
+	return c.isRemoteAuthenticated
+}
+
 //
 // input/output functions
 //
