@@ -30,23 +30,23 @@ To implement the Disco extension, a Strobe implementation respecting the functio
 
 **draft-3**:
 
+* The specification now extends Noise draft-33.
 * A `isSetKey` boolean value was added to the SymmetricState, it is set when `MixKey()` is called.
 * `EncryptAndHash()` and `DecryptAndHash()` now look for the value of `isSetKey` and branch to `send_CLR()` and `recv_CLR()` if the boolean value is set to `false`.
+* a `StrobeState` object has been introduced to formalize the integration of Strobe in Disco.
 * Added the missing `GetHandshakeHash()` function to the `SymmetricState`.
-* The specification now extends Noise draft-33.
+* removed the `TAGLEN` field and set it to 16 everywhere. Following Noise's way of defining the tag length.
 * Half-duplex protocols are introduced in Advanced features.
 * Out-of-order protocols are introduced in Advanced features, along with `DiscoSecureChannel` objects.
-* removed the `TAGLEN` field and set it to 16 everywhere. Following Noise's way of defining the tag len.
-* a `StrobeState` object is introduced.
 
 **draft-2**:
 
-* The SymmetricState object has been simplified with Strobe's calls.
+* The `SymmetricState` object has been simplified with Strobe's calls (instead of modifying the `HandshakeState`).
 
 **draft-1**:
 
 * Protocol names don't have the symmetric algorithms, but instead the version of Strobe.
-* The CipherState object has been removed.
+* The `CipherState` object has been removed.
 * The Handshake object makes calls to Strobe functions, affecting a unique Strobe state.
 * The Handshake returns two Strobe states.
 * The document extends Noise draft-32.
