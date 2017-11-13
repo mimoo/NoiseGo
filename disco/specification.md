@@ -1,5 +1,3 @@
-**THIS HAS TKTKTKTK, DO NOT PUSH**
-
 # Noise Extension: Disco
 
 * author:     David Wong (david.wong@nccgroup.trust)
