@@ -69,15 +69,11 @@ Noise_XX_25519_STROBEv1.0.2
 
 ## 3. The `StrobeState` object
 
-A `StrobeState` depends on the following associated constant:
+A `StrobeState` depends on a Strobe object (as defined in [section 5 of the Strobe Specification](https://strobe.sourceforge.io/specs/#object)) as well as the following associated constant:
 
 * **`R`**: The blocksize of the Strobe state (computed as `N - (2*sec)/8 - 2`, [see section 4 of the Strobe specification](https://strobe.sourceforge.io/specs/#params)).
 
-It depends on the following associated object:
-
-* **`Strobe Object`**: A Strobe object as defined in [section 5. State of a Strobe object](https://strobe.sourceforge.io/specs/#object) of the Strobe Specification.
-
-While a Strobe state responds to many functions ([see Strobe's specification](https://strobe.sourceforge.io/)), only the following ones need to be implemented in order for the Disco extension to work properly:
+While a Strobe object responds to many functions ([see Strobe's specification](https://strobe.sourceforge.io/)), only the following ones need to be implemented in order for the Disco extension to work properly:
 
 **`InitializeStrobe(protocol_name)`**: Initialize the Strobe object with a custom protocol name.
 
