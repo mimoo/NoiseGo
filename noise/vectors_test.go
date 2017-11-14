@@ -120,6 +120,8 @@ var patternsToTest = []struct {
 	patternName  noiseHandshakeType
 }{
 	{"Noise_N_25519_ChaChaPoly_SHA256", Noise_N},
+	{"Noise_X_25519_ChaChaPoly_SHA256", Noise_X},
+	{"Noise_K_25519_ChaChaPoly_SHA256", Noise_K},
 	{"Noise_KK_25519_ChaChaPoly_SHA256", Noise_KK},
 	{"Noise_NX_25519_ChaChaPoly_SHA256", Noise_NX},
 	{"Noise_NK_25519_ChaChaPoly_SHA256", Noise_NK},

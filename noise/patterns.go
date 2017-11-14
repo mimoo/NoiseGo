@@ -31,9 +31,10 @@ const (
 	// validate the received keys properly.
 	Noise_XX
 
-	// Not implemented
+	// Not documented
 	Noise_K
 	Noise_X
+	// Not implemented
 	Noise_NN
 	Noise_KN
 	Noise_KX
@@ -79,10 +80,42 @@ var patterns = map[noiseHandshakeType]handshakePattern{
 		},
 	},
 
+	/*
+		K(s, rs):
+		  -> s
+		  <- s
+		  ...
+		  -> e, es, ss
+	*/
+	Noise_K: handshakePattern{
+		name: "K",
+		preMessagePatterns: []messagePattern{
+			messagePattern{token_s}, // →
+			messagePattern{token_s}, // ←
+		},
+		messagePatterns: []messagePattern{
+			messagePattern{token_e, token_es, token_ss}, // →
+		},
+	},
+	/*
+		X(s, rs):
+		 <- s
+		 ...
+		 -> e, es, s, ss
+	*/
+	Noise_X: handshakePattern{
+		name: "X",
+		preMessagePatterns: []messagePattern{
+			messagePattern{},        // →
+			messagePattern{token_s}, // ←
+		},
+		messagePatterns: []messagePattern{
+			messagePattern{token_e, token_es, token_s, token_ss}, // →
+		},
+	},
 	//
 	// 7.3. Interactive patterns
 	//
-
 	Noise_KK: handshakePattern{
 		name: "KK",
 		preMessagePatterns: []messagePattern{
