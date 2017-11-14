@@ -198,6 +198,10 @@ func Dial(network, addr string, config *Config) (*Conn, error) {
 // point during the handshake
 func CreatePublicKeyVerifier(rootPublicKey ed25519.PublicKey) func([]byte, []byte) bool {
 	return func(publicKey, proof []byte) bool {
+		// ed25519.Verify panics if len(publicKey) is not PublicKeySize. We need to avoid that
+		if len(publicKey) != 32 {
+			return false
+		}
 		return ed25519.Verify(rootPublicKey, publicKey, proof)
 	}
 }
