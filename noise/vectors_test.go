@@ -66,6 +66,7 @@ var testVectors map[string]vector
 //
 // Retrieve test vectors from Cacophony
 //
+
 func init() {
 	// open cacophony test vectors
 	raw, err := ioutil.ReadFile("./vectors/cacophony.txt")
@@ -79,195 +80,118 @@ func init() {
 	// only get what I want into the testVectors map
 	testVectors = make(map[string]vector)
 	for _, hexVector := range parsedTestVectors.Vectors {
-		if n := hexVector.ProtocolName; n == "Noise_N_25519_ChaChaPoly_SHA256" || n == "Noise_KK_25519_ChaChaPoly_SHA256" || n == "Noise_NX_25519_ChaChaPoly_SHA256" || n == "Noise_NK_25519_ChaChaPoly_SHA256" || n == "Noise_XX_25519_ChaChaPoly_SHA256" {
-			initPrologue, _ := hex.DecodeString(hexVector.InitPrologue)
-			initStatic, _ := hex.DecodeString(hexVector.InitStatic)
-			initEphemeral, _ := hex.DecodeString(hexVector.InitEphemeral)
-			initRemoteStatic, _ := hex.DecodeString(hexVector.InitRemoteStatic)
-			respPrologue, _ := hex.DecodeString(hexVector.RespPrologue)
-			respStatic, _ := hex.DecodeString(hexVector.RespStatic)
-			respEphemeral, _ := hex.DecodeString(hexVector.RespEphemeral)
-			respRemoteStatic, _ := hex.DecodeString(hexVector.RespRemoteStatic)
-			messages := make([]message, len(hexVector.Messages))
-			for idx, hexMessage := range hexVector.Messages {
-				payload, _ := hex.DecodeString(hexMessage.Payload)
-				ciphertext, _ := hex.DecodeString(hexMessage.Ciphertext)
-				messages[idx] = message{payload, ciphertext}
-			}
-			byteVector := vector{
-				initPrologue:     initPrologue,
-				initStatic:       initStatic,
-				initEphemeral:    initEphemeral,
-				initRemoteStatic: initRemoteStatic,
-				respPrologue:     respPrologue,
-				respStatic:       respStatic,
-				respEphemeral:    respEphemeral,
-				respRemoteStatic: respRemoteStatic,
-				messages:         messages,
-			}
-			testVectors[hexVector.ProtocolName] = byteVector
+		initPrologue, _ := hex.DecodeString(hexVector.InitPrologue)
+		initStatic, _ := hex.DecodeString(hexVector.InitStatic)
+		initEphemeral, _ := hex.DecodeString(hexVector.InitEphemeral)
+		initRemoteStatic, _ := hex.DecodeString(hexVector.InitRemoteStatic)
+		respPrologue, _ := hex.DecodeString(hexVector.RespPrologue)
+		respStatic, _ := hex.DecodeString(hexVector.RespStatic)
+		respEphemeral, _ := hex.DecodeString(hexVector.RespEphemeral)
+		respRemoteStatic, _ := hex.DecodeString(hexVector.RespRemoteStatic)
+		messages := make([]message, len(hexVector.Messages))
+		for idx, hexMessage := range hexVector.Messages {
+			payload, _ := hex.DecodeString(hexMessage.Payload)
+			ciphertext, _ := hex.DecodeString(hexMessage.Ciphertext)
+			messages[idx] = message{payload, ciphertext}
 		}
+		byteVector := vector{
+			initPrologue:     initPrologue,
+			initStatic:       initStatic,
+			initEphemeral:    initEphemeral,
+			initRemoteStatic: initRemoteStatic,
+			respPrologue:     respPrologue,
+			respStatic:       respStatic,
+			respEphemeral:    respEphemeral,
+			respRemoteStatic: respRemoteStatic,
+			messages:         messages,
+		}
+		testVectors[hexVector.ProtocolName] = byteVector
+
 	}
 
 }
 
-/*
-N(rs):
-  <- s
-  ...
-  -> e, es
-*/
-func Test_Noise_N_25519_ChaChaPoly_SHA256(t *testing.T) {
-	testVector := testVectors["Noise_N_25519_ChaChaPoly_SHA256"]
-	// setup initiator ephemeral
-	var e KeyPair
-	copy(e.PrivateKey[:], testVector.initEphemeral)
-	curve25519.ScalarBaseMult(&e.PublicKey, &e.PrivateKey)
-	// setup initiator remote static key
-	var rs KeyPair
-	copy(rs.PublicKey[:], testVector.initRemoteStatic)
-	// go through handshake
-	initiator := initialize(Noise_N, true, testVector.initPrologue, nil, nil, &rs, nil)
-	initiator.debugEphemeral = &e
-	var handshakeMsg []byte
-	c1, _, err := initiator.writeMessage(testVector.messages[0].payload, &handshakeMsg)
+//
+// Test the following patterns
+//
 
-	if !bytes.Equal(testVector.messages[0].ciphertext, handshakeMsg) {
-		t.Fatal("text vector failed")
-	}
+var patternsToTest = []struct {
+	protocolName string
+	patternName  noiseHandshakeType
+}{
+	{"Noise_N_25519_ChaChaPoly_SHA256", Noise_N},
+	{"Noise_KK_25519_ChaChaPoly_SHA256", Noise_KK},
+	{"Noise_NX_25519_ChaChaPoly_SHA256", Noise_NX},
+	{"Noise_NK_25519_ChaChaPoly_SHA256", Noise_NK},
+	{"Noise_XX_25519_ChaChaPoly_SHA256", Noise_XX},
+}
 
-	if c1 == nil || err != nil {
-		t.Fatal("cannot finish handshake")
-	}
-	// go through messages
-	for _, message := range testVector.messages[1:] {
-		ciphertext, err := c1.encryptWithAd([]byte{}, message.payload)
-		if err != nil {
-			t.Fatal("message failed to encrypt", err)
+func TestPatterns(t *testing.T) {
+	for _, pattern := range patternsToTest {
+		testVector := testVectors[pattern.protocolName]
+		initiator, responder := setupInitiatorAndResponder(pattern.patternName, testVector)
+		oneWayPattern := false
+		if pn := pattern.patternName; pn == Noise_N || pn == Noise_K || pn == Noise_X {
+			oneWayPattern = true
 		}
-		if !bytes.Equal(message.ciphertext, ciphertext) {
-			t.Fatal("text vector failed")
-		}
+		goThroughTestVectors(t, &initiator, &responder, testVector.messages, oneWayPattern)
 	}
 }
 
-/*
-KK(s, rs):
-  -> s
-  <- s
-  ...
-  -> e, es, ss
-  <- e, ee, se
-*/
-func Test_Noise_KK_25519_ChaChaPoly_SHA256(t *testing.T) {
-	testVector := testVectors["Noise_KK_25519_ChaChaPoly_SHA256"]
+//
+// Core functions (title says everything)
+//
+
+func setupInitiatorAndResponder(patternName noiseHandshakeType, testVector vector) (handshakeState, handshakeState) {
+	var init_s, init_rs, resp_s, resp_rs *KeyPair
 	// setup initiator static
-	var s KeyPair
-	copy(s.PrivateKey[:], testVector.initStatic)
-	curve25519.ScalarBaseMult(&s.PublicKey, &s.PrivateKey)
+	if len(testVector.initStatic) > 0 {
+		var static KeyPair
+		copy(static.PrivateKey[:], testVector.initStatic)
+		curve25519.ScalarBaseMult(&static.PublicKey, &static.PrivateKey)
+		init_s = &static
+	}
+	// setup initiator remote static
+	if len(testVector.initRemoteStatic) > 0 {
+		var static KeyPair
+		copy(static.PublicKey[:], testVector.initRemoteStatic)
+		init_rs = &static
+	}
 	// setup responder static
-	var rs KeyPair
-	copy(rs.PrivateKey[:], testVector.respStatic)
-	curve25519.ScalarBaseMult(&rs.PublicKey, &rs.PrivateKey)
+	if len(testVector.respStatic) > 0 {
+		var static KeyPair
+		copy(static.PrivateKey[:], testVector.respStatic)
+		curve25519.ScalarBaseMult(&static.PublicKey, &static.PrivateKey)
+		resp_s = &static
+	}
+	// setup responder remote static
+	if len(testVector.respRemoteStatic) > 0 {
+		var static KeyPair
+		copy(static.PublicKey[:], testVector.respRemoteStatic)
+		resp_rs = &static
+	}
 	// initialize(handshakeType, initiator, prologue, s, e, rs, re)
-	initiator := initialize(Noise_KK, true, testVector.initPrologue, &s, nil, &rs, nil)
-	responder := initialize(Noise_KK, false, testVector.respPrologue, &rs, nil, &s, nil)
+	initiator := initialize(patternName, true, testVector.initPrologue, init_s, nil, init_rs, nil)
+	responder := initialize(patternName, false, testVector.respPrologue, resp_s, nil, resp_rs, nil)
 	// setup initiator ephemeral
-	var e KeyPair
-	copy(e.PrivateKey[:], testVector.initEphemeral)
-	curve25519.ScalarBaseMult(&e.PublicKey, &e.PrivateKey)
-	initiator.debugEphemeral = &e
+	if len(testVector.initEphemeral) > 0 {
+		var e KeyPair
+		copy(e.PrivateKey[:], testVector.initEphemeral)
+		curve25519.ScalarBaseMult(&e.PublicKey, &e.PrivateKey)
+		initiator.debugEphemeral = &e
+	}
 	// setup responder ephemeral
-	var re KeyPair
-	copy(re.PrivateKey[:], testVector.respEphemeral)
-	curve25519.ScalarBaseMult(&re.PublicKey, &re.PrivateKey)
-	responder.debugEphemeral = &re
-
-	// go through test vectors
-	goThroughTestVectors(t, &initiator, &responder, testVector.messages)
+	if len(testVector.respEphemeral) > 0 {
+		var re KeyPair
+		copy(re.PrivateKey[:], testVector.respEphemeral)
+		curve25519.ScalarBaseMult(&re.PublicKey, &re.PrivateKey)
+		responder.debugEphemeral = &re
+	}
+	//
+	return initiator, responder
 }
 
-/*
- */
-func Test_Noise_NX_25519_ChaChaPoly_SHA256(t *testing.T) {
-	testVector := testVectors["Noise_NX_25519_ChaChaPoly_SHA256"]
-	// setup responder static
-	var rs KeyPair
-	copy(rs.PrivateKey[:], testVector.respStatic)
-	curve25519.ScalarBaseMult(&rs.PublicKey, &rs.PrivateKey)
-	// initialize(handshakeType, initiator, prologue, s, e, rs, re)
-	initiator := initialize(Noise_NX, true, testVector.initPrologue, nil, nil, nil, nil)
-	responder := initialize(Noise_NX, false, testVector.respPrologue, &rs, nil, nil, nil)
-	// setup initiator ephemeral
-	var e KeyPair
-	copy(e.PrivateKey[:], testVector.initEphemeral)
-	curve25519.ScalarBaseMult(&e.PublicKey, &e.PrivateKey)
-	initiator.debugEphemeral = &e
-	// setup responder ephemeral
-	var re KeyPair
-	copy(re.PrivateKey[:], testVector.respEphemeral)
-	curve25519.ScalarBaseMult(&re.PublicKey, &re.PrivateKey)
-	responder.debugEphemeral = &re
-	// go through test vectors
-	goThroughTestVectors(t, &initiator, &responder, testVector.messages)
-}
-
-/*
- */
-func Test_Noise_NK_25519_ChaChaPoly_SHA256(t *testing.T) {
-	testVector := testVectors["Noise_NK_25519_ChaChaPoly_SHA256"]
-	// setup responder static
-	var rs KeyPair
-	copy(rs.PrivateKey[:], testVector.respStatic)
-	curve25519.ScalarBaseMult(&rs.PublicKey, &rs.PrivateKey)
-	// initialize(handshakeType, initiator, prologue, s, e, rs, re)
-	initiator := initialize(Noise_NK, true, testVector.initPrologue, nil, nil, &rs, nil)
-	responder := initialize(Noise_NK, false, testVector.respPrologue, &rs, nil, nil, nil)
-	// setup initiator ephemeral
-	var e KeyPair
-	copy(e.PrivateKey[:], testVector.initEphemeral)
-	curve25519.ScalarBaseMult(&e.PublicKey, &e.PrivateKey)
-	initiator.debugEphemeral = &e
-	// setup responder ephemeral
-	var re KeyPair
-	copy(re.PrivateKey[:], testVector.respEphemeral)
-	curve25519.ScalarBaseMult(&re.PublicKey, &re.PrivateKey)
-	responder.debugEphemeral = &re
-	// go through test vectors
-	goThroughTestVectors(t, &initiator, &responder, testVector.messages)
-}
-
-/*
- */
-// For some reason this test fails because the Cacophony test vectors have the server send the first message after the handshake has completed. Changing the handshakeComplete to true down below makes the test pass.
-func Test_Noise_XX_25519_ChaChaPoly_SHA256(t *testing.T) {
-	testVector := testVectors["Noise_XX_25519_ChaChaPoly_SHA256"]
-	// setup initiator static
-	var s KeyPair
-	copy(s.PrivateKey[:], testVector.initStatic)
-	curve25519.ScalarBaseMult(&s.PublicKey, &s.PrivateKey)
-	// setup responder static
-	var rs KeyPair
-	copy(rs.PrivateKey[:], testVector.respStatic)
-	curve25519.ScalarBaseMult(&rs.PublicKey, &rs.PrivateKey)
-	// initialize(handshakeType, initiator, prologue, s, e, rs, re)
-	initiator := initialize(Noise_XX, true, testVector.initPrologue, &s, nil, nil, nil)
-	responder := initialize(Noise_XX, false, testVector.respPrologue, &rs, nil, nil, nil)
-	// setup initiator ephemeral
-	var e KeyPair
-	copy(e.PrivateKey[:], testVector.initEphemeral)
-	curve25519.ScalarBaseMult(&e.PublicKey, &e.PrivateKey)
-	initiator.debugEphemeral = &e
-	// setup responder ephemeral
-	var re KeyPair
-	copy(re.PrivateKey[:], testVector.respEphemeral)
-	curve25519.ScalarBaseMult(&re.PublicKey, &re.PrivateKey)
-	responder.debugEphemeral = &re
-	// go through test vectors
-	goThroughTestVectors(t, &initiator, &responder, testVector.messages)
-}
-
-func goThroughTestVectors(t *testing.T, initiator, responder *handshakeState, messages []message) {
+func goThroughTestVectors(t *testing.T, initiator, responder *handshakeState, messages []message, oneWayPattern bool) {
 	whoseTurnIsIt := true
 	handshakeComplete := false
 	var initiator_c1, initiator_c2, responder_c1, responder_c2 *cipherState
@@ -308,7 +232,6 @@ func goThroughTestVectors(t *testing.T, initiator, responder *handshakeState, me
 					}
 				}
 			}
-			whoseTurnIsIt = !whoseTurnIsIt
 		} else {
 			if whoseTurnIsIt {
 				ciphertext, err := initiator_c1.encryptWithAd([]byte{}, message.payload)
@@ -341,6 +264,8 @@ func goThroughTestVectors(t *testing.T, initiator, responder *handshakeState, me
 					t.Fatal("bad decryption")
 				}
 			}
+		}
+		if !oneWayPattern {
 			whoseTurnIsIt = !whoseTurnIsIt
 		}
 	}
