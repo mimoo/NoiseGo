@@ -227,9 +227,8 @@ func CreateStaticPublicKeyProof(rootPrivateKey ed25519.PrivateKey, keyPair *KeyP
 func GenerateAndSaveNoiseRootKeyPair(NoiseRootPrivateKeyFile string, NoiseRootPublicKeyFile string) (err error) {
 	// TODO: should I require a passphrase and encrypt it with it?
 	publicKey, privateKey, _ := ed25519.GenerateKey(rand.Reader)
-
 	var publicKeyHex [32 * 2]byte
-	var privateKeyHex [32 * 2]byte
+	var privateKeyHex [64 * 2]byte
 	hex.Encode(publicKeyHex[:], publicKey)
 	hex.Encode(privateKeyHex[:], privateKey)
 
@@ -271,10 +270,10 @@ func LoadNoiseRootPrivateKey(noiseRootPrivateKey string) (rootPrivateKey ed25519
 	if err != nil {
 		return nil, err
 	}
-	if len(privateKeyHex) != 32*2 {
+	if len(privateKeyHex) != 64*2 {
 		return nil, errors.New("Noise: Noise root private key file is not correctly formated")
 	}
-	privateKey := make([]byte, 32)
+	privateKey := make([]byte, 64)
 	_, err = hex.Decode(privateKey[:], privateKeyHex)
 	if err != nil {
 		return nil, err
@@ -288,26 +287,26 @@ func LoadNoiseRootPrivateKey(noiseRootPrivateKey string) (rootPrivateKey ed25519
 
 // GenerateAndSaveNoiseKeyPair generates a noise key pair (X25519 key pair)
 // and saves it to a file in hexadecimal form.
-func GenerateAndSaveNoiseKeyPair(NoiseKeyPairFile string) (err error) {
+func GenerateAndSaveNoiseKeyPair(NoiseKeyPairFile string) (keyPair *KeyPair, err error) {
 
 	// TODO: should I require a passphrase and encrypt it with it?
 	// TODO: that should probably be saved in two files?
-	keyPair := GenerateKeypair(nil)
+	keyPair = GenerateKeypair(nil)
 	var dataToWrite [128]byte
 	hex.Encode(dataToWrite[:64], keyPair.PrivateKey[:])
 	hex.Encode(dataToWrite[64:], keyPair.PublicKey[:])
 	err = ioutil.WriteFile(NoiseKeyPairFile, dataToWrite[:], 0400)
 	if err != nil {
-		return errors.New("Noise: could not write on file at path")
+		return nil, errors.New("Noise: could not write on file at path")
 	}
-	return nil
+	return keyPair, nil
 }
 
 // LoadNoiseKeyPair reads and parses a public/private key pair from a pair
 // of files.
-func LoadNoiseKeyPair(noisePrivateKeyPairFile string) (keypair *KeyPair, err error) {
+func LoadNoiseKeyPair(noiseKeyPairFile string) (keypair *KeyPair, err error) {
 	// TODO: should I require a passphrase to decrypt it?
-	keyPairString, err := ioutil.ReadFile(noisePrivateKeyPairFile)
+	keyPairString, err := ioutil.ReadFile(noiseKeyPairFile)
 	if err != nil {
 		return nil, err
 	}
