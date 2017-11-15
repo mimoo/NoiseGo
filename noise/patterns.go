@@ -7,16 +7,29 @@ package noise
 type noiseHandshakeType int8
 
 const (
-	// NoiseN is a one-way pattern where a client can send
+	// Noise_N is a one-way pattern where a client can send
 	// data to a server with a known static key. The server
 	// can only receive data and cannot reply back.
 	Noise_N noiseHandshakeType = iota
 
-	// NoiseKK is a pattern where both the client static key and the
+	// Noise_K is a one-way pattern where a client can send
+	// data to a server with a known static key. The server
+	// can only receive data and cannot reply back. The server
+	// authenticates the client via a known key.
+	Noise_K
+
+	// Noise_X is a one-way pattern where a client can send
+	// data to a server with a known static key. The server
+	// can only receive data and cannot reply back. The server
+	// authenticates the client via a key transmitted as part
+	// of the handshake.
+	Noise_X
+
+	// Noise_KK is a pattern where both the client static key and the
 	// server static key are known.
 	Noise_KK
 
-	// NoiseNX is a "HTTPS"-like pattern where the client is
+	// Noise_NX is a "HTTPS"-like pattern where the client is
 	// not authenticated, and the static public key of the server
 	// is transmitted during the handshake. It is the responsability of the client to validate the received key properly.
 	Noise_NX
@@ -26,23 +39,22 @@ const (
 	// is already known.
 	Noise_NK
 
-	// NoiseXX is a pattern where both static keys are transmitted.
+	// Noise_XX is a pattern where both static keys are transmitted.
 	// It is the responsability of the server and of the client to
 	// validate the received keys properly.
 	Noise_XX
 
 	// Not documented
-	Noise_K
-	Noise_X
-	// Not implemented
-	Noise_NN
-	Noise_KN
 	Noise_KX
-	Noise_XN
-	Noise_IN
 	Noise_XK
 	Noise_IK
 	Noise_IX
+
+	// Not implemented
+	Noise_NN
+	Noise_KN
+	Noise_XN
+	Noise_IN
 )
 
 type token uint8
@@ -162,6 +174,79 @@ var patterns = map[noiseHandshakeType]handshakePattern{
 			messagePattern{token_e},                              // →
 			messagePattern{token_e, token_ee, token_s, token_es}, // ←
 			messagePattern{token_s, token_se},                    // →
+		},
+	},
+
+	/*
+			KX(s, rs):
+		      -> s
+		      ...
+		      -> e
+		      <- e, ee, se, s, es
+	*/
+	Noise_KX: handshakePattern{
+		name: "KX",
+		preMessagePatterns: []messagePattern{
+			messagePattern{token_s}, // →
+			messagePattern{},        // ←
+		},
+		messagePatterns: []messagePattern{
+			messagePattern{token_e},                                        // →
+			messagePattern{token_e, token_ee, token_se, token_s, token_es}, // ←
+		},
+	},
+	/*
+			XK(s, rs):
+		  <- s
+		  ...
+		  -> e, es
+		  <- e, ee
+		  -> s, se
+	*/
+	Noise_XK: handshakePattern{
+		name: "XK",
+		preMessagePatterns: []messagePattern{
+			messagePattern{},        // →
+			messagePattern{token_s}, // ←
+		},
+		messagePatterns: []messagePattern{
+			messagePattern{token_e, token_es}, // →
+			messagePattern{token_e, token_ee}, // ←
+			messagePattern{token_s, token_se}, // →
+		},
+	},
+	/*
+		IK(s, rs):
+		<- s
+		...
+		-> e, es, s, ss
+		<- e, ee, se
+	*/
+	Noise_IK: handshakePattern{
+		name: "IK",
+		preMessagePatterns: []messagePattern{
+			messagePattern{},        // →
+			messagePattern{token_s}, // ←
+		},
+		messagePatterns: []messagePattern{
+			messagePattern{token_e, token_es, token_s, token_ss}, // →
+			messagePattern{token_e, token_ee, token_se},          // ←
+		},
+	},
+	/*
+		IX(s, rs):
+		 -> e, s
+		 <- e, ee, se, s, es
+	*/
+	Noise_IX: handshakePattern{
+		name: "IX",
+		preMessagePatterns: []messagePattern{
+			messagePattern{}, // →
+			messagePattern{}, // ←
+		},
+		messagePatterns: []messagePattern{
+			messagePattern{token_e, token_s},                               // →
+			messagePattern{token_e, token_ee, token_se, token_s, token_es}, // ←
 		},
 	},
 }

@@ -126,6 +126,10 @@ var patternsToTest = []struct {
 	{"Noise_NX_25519_ChaChaPoly_SHA256", Noise_NX},
 	{"Noise_NK_25519_ChaChaPoly_SHA256", Noise_NK},
 	{"Noise_XX_25519_ChaChaPoly_SHA256", Noise_XX},
+	{"Noise_KX_25519_ChaChaPoly_SHA256", Noise_KX},
+	{"Noise_XK_25519_ChaChaPoly_SHA256", Noise_XK},
+	{"Noise_IK_25519_ChaChaPoly_SHA256", Noise_IK},
+	{"Noise_IX_25519_ChaChaPoly_SHA256", Noise_IX},
 }
 
 func TestPatterns(t *testing.T) {
