@@ -80,8 +80,8 @@ func (timeoutError) Temporary() bool { return true }
 // this functions checks if at some point in the protocol
 // the peer needs to verify the other peer static public key
 // and if the peer needs to provide a proof for its static public key
-var errNoPubkeyVerifier = errors.New("Noise: no public key verifier set in Config")
-var errNoProof = errors.New("Noise: no public key proof set in Config")
+var errNoPubkeyVerifier = errors.New("noise: no public key verifier set in noise.Config")
+var errNoProof = errors.New("noise: no public key proof set in noise.Config")
 
 func checkRequirements(isClient bool, config *Config) (err error) {
 	ht := config.HandshakePattern
@@ -98,6 +98,9 @@ func checkRequirements(isClient bool, config *Config) (err error) {
 		} else if !isClient && config.PublicKeyVerifier == nil {
 			return errNoPubkeyVerifier
 		}
+	}
+	if ht == Noise_NNpsk2 && len(config.PreSharedKey) != 32 {
+		return errors.New("noise: a 32-byte pre-shared key needs to be passed as noise.Config")
 	}
 	return nil
 }
@@ -125,9 +128,8 @@ func DialWithDialer(dialer *net.Dialer, network, addr string, config *Config) (*
 
 	// check Config
 	if config == nil {
-		panic("Noise: no Config set")
+		panic("noise: no noise.Config set")
 	}
-
 	if err := checkRequirements(true, config); err != nil {
 		panic(err)
 	}

@@ -32,6 +32,8 @@ type Vector struct {
 	RespEphemeral    string    `json:"resp_ephemeral"`
 	RespRemoteStatic string    `json:"resp_remote_static"`
 	HandshakeHash    string    `json:"handshake_hash"`
+	InitPsks         []string  `json:"init_psks"`
+	RespPsks         []string  `json:"resp_psks"`
 	Messages         []Message `json:"messages"`
 }
 
@@ -58,7 +60,11 @@ type vector struct {
 	respStatic       []byte
 	respEphemeral    []byte
 	respRemoteStatic []byte
-	messages         []message
+
+	initPsks []byte
+	respPsks []byte
+
+	messages []message
 }
 
 var testVectors map[string]vector
@@ -88,6 +94,11 @@ func init() {
 		respStatic, _ := hex.DecodeString(hexVector.RespStatic)
 		respEphemeral, _ := hex.DecodeString(hexVector.RespEphemeral)
 		respRemoteStatic, _ := hex.DecodeString(hexVector.RespRemoteStatic)
+		var initPsks, respPsks []byte
+		if len(hexVector.InitPsks) > 0 {
+			initPsks, _ = hex.DecodeString(hexVector.InitPsks[0])
+			respPsks, _ = hex.DecodeString(hexVector.RespPsks[0])
+		}
 		messages := make([]message, len(hexVector.Messages))
 		for idx, hexMessage := range hexVector.Messages {
 			payload, _ := hex.DecodeString(hexMessage.Payload)
@@ -103,6 +114,8 @@ func init() {
 			respStatic:       respStatic,
 			respEphemeral:    respEphemeral,
 			respRemoteStatic: respRemoteStatic,
+			initPsks:         initPsks,
+			respPsks:         respPsks,
 			messages:         messages,
 		}
 		testVectors[hexVector.ProtocolName] = byteVector
@@ -130,6 +143,7 @@ var patternsToTest = []struct {
 	{"Noise_XK_25519_ChaChaPoly_SHA256", Noise_XK},
 	{"Noise_IK_25519_ChaChaPoly_SHA256", Noise_IK},
 	{"Noise_IX_25519_ChaChaPoly_SHA256", Noise_IX},
+	{"Noise_NNpsk2_25519_ChaChaPoly_SHA256", Noise_NNpsk2},
 }
 
 func TestPatterns(t *testing.T) {
@@ -140,7 +154,7 @@ func TestPatterns(t *testing.T) {
 		if pn := pattern.patternName; pn == Noise_N || pn == Noise_K || pn == Noise_X {
 			oneWayPattern = true
 		}
-		goThroughTestVectors(t, &initiator, &responder, testVector.messages, oneWayPattern)
+		goThroughTestVectors(t, pattern.protocolName, &initiator, &responder, testVector.messages, oneWayPattern)
 	}
 }
 
@@ -193,26 +207,30 @@ func setupInitiatorAndResponder(patternName noiseHandshakeType, testVector vecto
 		curve25519.ScalarBaseMult(&re.PublicKey, &re.PrivateKey)
 		responder.debugEphemeral = &re
 	}
+	// setup psk
+	initiator.psk = testVector.initPsks
+	responder.psk = testVector.respPsks
 	//
 	return initiator, responder
 }
 
-func goThroughTestVectors(t *testing.T, initiator, responder *handshakeState, messages []message, oneWayPattern bool) {
+func goThroughTestVectors(t *testing.T, patternName string, initiator, responder *handshakeState, messages []message, oneWayPattern bool) {
 	whoseTurnIsIt := true
 	handshakeComplete := false
 	var initiator_c1, initiator_c2, responder_c1, responder_c2 *cipherState
-	for _, message := range messages {
+	for idx, message := range messages {
 		if !handshakeComplete {
 			if whoseTurnIsIt {
 				var ciphertext []byte
 				var plaintext []byte
+				fmt.Println(initiator.messagePatterns)
 				initiator_c1, initiator_c2, _ = initiator.writeMessage(message.payload, &ciphertext)
 				responder_c1, responder_c2, _ = responder.readMessage(ciphertext, &plaintext)
 				if !bytes.Equal(message.ciphertext, ciphertext) {
-					t.Fatal("initiator's message failed")
+					t.Fatalf("initiator's message %d failed for %s", idx, patternName)
 				}
 				if !bytes.Equal(message.payload, plaintext) {
-					t.Fatal("responder's message failed")
+					t.Fatalf("responder's message %d failed for %s", idx, patternName)
 				}
 				if initiator_c1 != nil {
 					handshakeComplete = true

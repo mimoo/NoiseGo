@@ -218,6 +218,9 @@ type handshakeState struct {
 	// or ReadMessage
 	shouldWrite bool
 
+	// pre-shared key
+	psk []byte
+
 	// for test vectors
 	debugEphemeral *KeyPair
 }
@@ -300,6 +303,7 @@ func initialize(handshakeType noiseHandshakeType, initiator bool, prologue []byt
 	return
 }
 
+// TODO: pointer to a slice as argument!
 func (h *handshakeState) writeMessage(payload []byte, messageBuffer *[]byte) (c1, c2 *cipherState, err error) {
 	// is it our turn to write?
 	if !h.shouldWrite {
@@ -313,7 +317,10 @@ func (h *handshakeState) writeMessage(payload []byte, messageBuffer *[]byte) (c1
 	// process the patterns
 	for _, pattern := range h.messagePatterns[0] {
 
-		if pattern == token_e {
+		switch pattern {
+		default:
+			panic("Noise: token not recognized")
+		case token_e:
 			// debug
 			if h.debugEphemeral != nil {
 				h.e = *h.debugEphemeral
@@ -322,8 +329,10 @@ func (h *handshakeState) writeMessage(payload []byte, messageBuffer *[]byte) (c1
 			}
 			*messageBuffer = append(*messageBuffer, h.e.PublicKey[:]...)
 			h.symmetricState.mixHash(h.e.PublicKey[:])
-
-		} else if pattern == token_s {
+			if len(h.psk) > 0 {
+				h.symmetricState.mixKey(h.e.PublicKey)
+			}
+		case token_s:
 			var ciphertext []byte
 			ciphertext, err = h.symmetricState.encryptAndHash(h.s.PublicKey[:])
 			if err != nil {
@@ -331,27 +340,27 @@ func (h *handshakeState) writeMessage(payload []byte, messageBuffer *[]byte) (c1
 			}
 			*messageBuffer = append(*messageBuffer, ciphertext...)
 
-		} else if pattern == token_ee {
+		case token_ee:
 			h.symmetricState.mixKey(dh(h.e, h.re.PublicKey))
 
-		} else if pattern == token_es {
+		case token_es:
 			if h.initiator {
 				h.symmetricState.mixKey(dh(h.e, h.rs.PublicKey))
 			} else {
 				h.symmetricState.mixKey(dh(h.s, h.re.PublicKey))
 			}
 
-		} else if pattern == token_se {
+		case token_se:
 			if h.initiator {
 				h.symmetricState.mixKey(dh(h.s, h.re.PublicKey))
 			} else {
 				h.symmetricState.mixKey(dh(h.e, h.rs.PublicKey))
 			}
 
-		} else if pattern == token_ss {
+		case token_ss:
 			h.symmetricState.mixKey(dh(h.s, h.rs.PublicKey))
-		} else {
-			panic("Noise: token not recognized")
+		case token_psk:
+			h.symmetricState.mixKeyAndHash(h.psk)
 		}
 	}
 
@@ -381,6 +390,7 @@ func (h *handshakeState) writeMessage(payload []byte, messageBuffer *[]byte) (c1
 
 // ReadMessage takes a byte sequence containing a Noise handshake message,
 // and a payload_buffer to write the message's plaintext payload into.
+// TODO: a pointer to a slice? that should not be!
 func (h *handshakeState) readMessage(message []byte, payloadBuffer *[]byte) (c1, c2 *cipherState, err error) {
 	// is it our turn to read?
 	if h.shouldWrite {
@@ -396,22 +406,26 @@ func (h *handshakeState) readMessage(message []byte, payloadBuffer *[]byte) (c1,
 
 	for _, pattern := range h.messagePatterns[0] {
 
-		if pattern == token_e {
+		switch pattern {
+		default:
+			panic("noise: token not recognized")
+		case token_e:
 			if len(message[offset:]) < dhLen {
-				return nil, nil, errors.New("Noise: the received ephemeral key is to short")
+				return nil, nil, errors.New("noise: the received ephemeral key is to short")
 			}
 			copy(h.re.PublicKey[:], message[offset:offset+dhLen])
 			offset += dhLen
 			h.symmetricState.mixHash(h.re.PublicKey[:])
-
-		} else if pattern == token_s {
-
+			if len(h.psk) > 0 {
+				h.symmetricState.mixKey(h.re.PublicKey)
+			}
+		case token_s:
 			tagLen := 0
 			if h.symmetricState.cipherState.hasKey() {
 				tagLen = 16
 			}
 			if len(message[offset:]) < dhLen+tagLen {
-				return nil, nil, errors.New("Noise: the received static key is to short")
+				return nil, nil, errors.New("noise: the received static key is to short")
 			}
 			var plaintext []byte
 			plaintext, err = h.symmetricState.decryptAndHash(message[offset : offset+dhLen+tagLen])
@@ -422,27 +436,27 @@ func (h *handshakeState) readMessage(message []byte, payloadBuffer *[]byte) (c1,
 			copy(h.rs.PublicKey[:], plaintext)
 			offset += dhLen + tagLen
 
-		} else if pattern == token_ee {
+		case token_ee:
 			h.symmetricState.mixKey(dh(h.e, h.re.PublicKey))
 
-		} else if pattern == token_es {
+		case token_es:
 			if h.initiator {
 				h.symmetricState.mixKey(dh(h.e, h.rs.PublicKey))
 			} else {
 				h.symmetricState.mixKey(dh(h.s, h.re.PublicKey))
 			}
 
-		} else if pattern == token_se {
+		case token_se:
 			if h.initiator {
 				h.symmetricState.mixKey(dh(h.s, h.re.PublicKey))
 			} else {
 				h.symmetricState.mixKey(dh(h.e, h.rs.PublicKey))
 			}
 
-		} else if pattern == token_ss {
+		case token_ss:
 			h.symmetricState.mixKey(dh(h.s, h.rs.PublicKey))
-		} else {
-			panic("Noise: token not recognized")
+		case token_psk:
+			h.symmetricState.mixKeyAndHash(h.psk)
 		}
 	}
 
