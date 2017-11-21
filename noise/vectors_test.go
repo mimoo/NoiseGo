@@ -223,7 +223,6 @@ func goThroughTestVectors(t *testing.T, patternName string, initiator, responder
 			if whoseTurnIsIt {
 				var ciphertext []byte
 				var plaintext []byte
-				fmt.Println(initiator.messagePatterns)
 				initiator_c1, initiator_c2, _ = initiator.writeMessage(message.payload, &ciphertext)
 				responder_c1, responder_c2, _ = responder.readMessage(ciphertext, &plaintext)
 				if !bytes.Equal(message.ciphertext, ciphertext) {
