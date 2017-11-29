@@ -263,7 +263,7 @@ ContinueHandshake:
 		if len(hs.messagePatterns) <= 2 {
 			proof = c.config.StaticPublicKeyProof
 		}
-		c1, c2, err = hs.writeMessage(proof, bufToWrite)
+		c1, c2, err = hs.writeMessage(proof, &bufToWrite)
 		if err != nil {
 			return err
 		}
@@ -290,7 +290,7 @@ ContinueHandshake:
 			return err
 		}
 
-		c1, c2, err = hs.readMessage(noiseMessage, receivedPayload)
+		c1, c2, err = hs.readMessage(noiseMessage, &receivedPayload)
 		if err != nil {
 			return err
 		}
