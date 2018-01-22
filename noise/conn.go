@@ -17,6 +17,7 @@ type Conn struct {
 	// handshake
 	config            *Config // configuration passed to constructor
 	hs                handshakeState
+	remotePub         []byte
 	handshakeComplete bool
 	handshakeMutex    sync.Mutex
 
@@ -239,7 +240,7 @@ func (c *Conn) Handshake() error {
 	var remoteKeyPair *KeyPair
 	if c.config.RemoteKey != nil {
 		if len(c.config.RemoteKey) != 32 {
-			return errors.New("Noise: the provided remote key is not 32-byte.")
+			return errors.New("noise: the provided remote key is not 32-byte")
 		}
 		remoteKeyPair = &KeyPair{}
 		copy(remoteKeyPair.PublicKey[:], c.config.RemoteKey)
@@ -319,6 +320,9 @@ ContinueHandshake:
 			if !c.config.PublicKeyVerifier(hs.rs.PublicKey[:], receivedPayload) {
 				return errors.New("Noise: the received public key could not be authenticated")
 			}
+			c.isRemoteAuthenticated = true
+			c.remotePub = make([]byte, 32)
+			copy(c.remotePub, hs.rs.PublicKey[:])
 		}
 	}
 
@@ -349,6 +353,21 @@ ContinueHandshake:
 // IsRemoteAuthenticated can be used to check if the remote peer has been properly authenticated. It serves no real purpose for the moment as the handshake will not go through if a peer is not properly authenticated in patterns where the peer needs to be authenticated.
 func (c *Conn) IsRemoteAuthenticated() bool {
 	return c.isRemoteAuthenticated
+}
+
+// StaticKey returns the static key of the remote peer. It is useful in case the
+// static key is only transmitted during the handshake.
+func (c *Conn) StaticKey() ([]byte, error) {
+	if !c.IsRemoteAuthenticated() {
+		return nil, errors.New("noise: remote peer not authenticated")
+	}
+	if !c.handshakeComplete {
+		return nil, errors.New("noise: handshake not completed")
+	}
+	if c.remotePub == nil {
+		return nil, errors.New("noise: no remote static key given")
+	}
+	return c.remotePub, nil
 }
 
 //
