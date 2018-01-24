@@ -361,7 +361,7 @@ func (c *Conn) StaticKey() ([]byte, error) {
 	if !c.handshakeComplete {
 		return nil, errors.New("noise: handshake not completed")
 	}
-	if c.remotePubSet {
+	if !c.remotePubSet {
 		return nil, errors.New("noise: no remote static key given")
 	}
 	return c.remotePub[:], nil

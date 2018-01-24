@@ -191,7 +191,13 @@ func TestNoiseXX(t *testing.T) {
 		if _, err = serverSocket.Write([]byte("ca va?")); err != nil {
 			t.Fatal("server can't write on socket")
 		}
-
+		clientStatic, err := serverSocket.(*Conn).StaticKey()
+		if err != nil {
+			t.Fatal("client static key not retrieved")
+		}
+		if !bytes.Equal(clientStatic, clientKeyPair.PublicKey[:]) {
+			t.Fatal("client static retrieved not correct")
+		}
 	}()
 
 	// Run the client
@@ -210,6 +216,15 @@ func TestNoiseXX(t *testing.T) {
 	}
 	if !bytes.Equal(buf[:n], []byte("ca va?")) {
 		t.Fatal("server message failed")
+	}
+
+	serverStatic, err := clientSocket.StaticKey()
+	if err != nil {
+		t.Fatal("server static key not retrieved after exchange", err)
+	}
+
+	if !bytes.Equal(serverStatic, serverKeyPair.PublicKey[:]) {
+		t.Fatal("static key received different than server's one")
 	}
 }
 
