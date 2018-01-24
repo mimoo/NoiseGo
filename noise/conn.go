@@ -17,7 +17,8 @@ type Conn struct {
 	// handshake
 	config            *Config // configuration passed to constructor
 	hs                handshakeState
-	remotePub         [32]byte
+	remotePub         [32]byte // remote static public key
+	remotePubSet      bool     // true when remote public key is set in remotePub
 	handshakeComplete bool
 	handshakeMutex    sync.Mutex
 
@@ -320,7 +321,8 @@ ContinueHandshake:
 			if !c.config.PublicKeyVerifier(hs.rs.PublicKey[:], receivedPayload) {
 				return errors.New("Noise: the received public key could not be authenticated")
 			}
-			copy(c.remotePub, hs.rs.PublicKey[:])
+			copy(c.remotePub[:], hs.rs.PublicKey[:])
+			c.remotePubSet = true
 		}
 	}
 
@@ -359,10 +361,10 @@ func (c *Conn) StaticKey() ([]byte, error) {
 	if !c.handshakeComplete {
 		return nil, errors.New("noise: handshake not completed")
 	}
-	if c.remotePub == nil {
+	if c.remotePubSet {
 		return nil, errors.New("noise: no remote static key given")
 	}
-	return c.remotePub, nil
+	return c.remotePub[:], nil
 }
 
 //
