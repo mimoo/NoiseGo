@@ -17,7 +17,7 @@ type Conn struct {
 	// handshake
 	config            *Config // configuration passed to constructor
 	hs                handshakeState
-	remotePub         []byte
+	remotePub         [32]byte
 	handshakeComplete bool
 	handshakeMutex    sync.Mutex
 
@@ -320,8 +320,6 @@ ContinueHandshake:
 			if !c.config.PublicKeyVerifier(hs.rs.PublicKey[:], receivedPayload) {
 				return errors.New("Noise: the received public key could not be authenticated")
 			}
-			c.isRemoteAuthenticated = true
-			c.remotePub = make([]byte, 32)
 			copy(c.remotePub, hs.rs.PublicKey[:])
 		}
 	}
@@ -358,9 +356,6 @@ func (c *Conn) IsRemoteAuthenticated() bool {
 // StaticKey returns the static key of the remote peer. It is useful in case the
 // static key is only transmitted during the handshake.
 func (c *Conn) StaticKey() ([]byte, error) {
-	if !c.IsRemoteAuthenticated() {
-		return nil, errors.New("noise: remote peer not authenticated")
-	}
 	if !c.handshakeComplete {
 		return nil, errors.New("noise: handshake not completed")
 	}
