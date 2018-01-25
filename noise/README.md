@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mimoo/NoiseGo.svg?branch=master)](https://travis-ci.org/mimoo/NoiseGo)
+
 # NoisePlugAndPlay
 
 The `noise` package contained in this folder is a **plug-and-play** secure protocol based on the [Noise protocol framework](http://noiseprotocol.org/). It has been implemented following the same patterns used in [crypto/tls](https://golang.org/pkg/crypto/tls/).
