@@ -33,7 +33,7 @@ func TestFlynnNoise(t *testing.T) {
 
 	// generate flynn key
 	cs := noise.NewCipherSuite(noise.DH25519, noise.CipherChaChaPoly, noise.HashSHA256)
-	responderKey := cs.GenerateKeypair(rand.Reader)
+	responderKey, _ := cs.GenerateKeypair(rand.Reader)
 
 	// init client
 
@@ -44,7 +44,7 @@ func TestFlynnNoise(t *testing.T) {
 	initiator := initialize(Noise_XX, true, nil, initiatorKey, nil, nil, nil)
 
 	// init flynn
-	hsR := noise.NewHandshakeState(noise.Config{
+	hsR, _ := noise.NewHandshakeState(noise.Config{
 		CipherSuite:   cs,
 		Random:        rand.Reader,
 		Pattern:       noise.HandshakeXX,
@@ -73,7 +73,7 @@ func TestFlynnNoise(t *testing.T) {
 
 	// 2. responder "<-e, ee, s, es" - sends a public key in clear, DH, sends a static key encrypted
 	t.Log(" responder <-e, ee, s, es")
-	bufferResponder, _, _ = hsR.WriteMessage(nil, []byte("ca va ?"))
+	bufferResponder, _, _, _ = hsR.WriteMessage(nil, []byte("ca va ?"))
 
 	// 2. initiator "<-e, ee, s, es" -
 	t.Log(" initiator <-e, ee, s, es")
