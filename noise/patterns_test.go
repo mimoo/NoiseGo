@@ -196,7 +196,7 @@ func TestNoiseXX(t *testing.T) {
 			t.Fatal("client static key not retrieved")
 		}
 		if !bytes.Equal(clientStatic, clientKeyPair.PublicKey[:]) {
-			t.Fatal("client static retrieved not correct")
+			t.Fatalf("client static retrieved not correct %x", clientStatic)
 		}
 	}()
 
@@ -224,7 +224,7 @@ func TestNoiseXX(t *testing.T) {
 	}
 
 	if !bytes.Equal(serverStatic, serverKeyPair.PublicKey[:]) {
-		t.Fatal("static key received different than server's one")
+		t.Fatalf("(conn %p) static key received different than server's one %x", clientSocket, serverStatic)
 	}
 }
 

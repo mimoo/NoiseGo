@@ -17,8 +17,6 @@ type Conn struct {
 	// handshake
 	config            *Config // configuration passed to constructor
 	hs                handshakeState
-	remotePub         [32]byte // remote static public key
-	remotePubSet      bool     // true when remote public key is set in remotePub
 	handshakeComplete bool
 	handshakeMutex    sync.Mutex
 
@@ -246,7 +244,8 @@ func (c *Conn) Handshake() error {
 		remoteKeyPair = &KeyPair{}
 		copy(remoteKeyPair.PublicKey[:], c.config.RemoteKey)
 	}
-	hs := initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, nil, remoteKeyPair, nil)
+	c.hs = initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, nil, remoteKeyPair, nil)
+	hs := &c.hs
 
 	// pre-shared key
 	hs.psk = c.config.PreSharedKey
@@ -321,8 +320,6 @@ ContinueHandshake:
 			if !c.config.PublicKeyVerifier(hs.rs.PublicKey[:], receivedPayload) {
 				return errors.New("Noise: the received public key could not be authenticated")
 			}
-			copy(c.remotePub[:], hs.rs.PublicKey[:])
-			c.remotePubSet = true
 		}
 	}
 
@@ -344,7 +341,6 @@ ContinueHandshake:
 	// TODO: preserve c.hs.symmetricState.h
 	// At that point the HandshakeState should be deleted except for the hash value h, which may be used for post-handshake channel binding (see Section 11.2).
 	c.hs.clear()
-
 	// no errors :)
 	c.handshakeComplete = true
 	return nil
@@ -361,10 +357,7 @@ func (c *Conn) StaticKey() ([]byte, error) {
 	if !c.handshakeComplete {
 		return nil, errors.New("noise: handshake not completed")
 	}
-	if !c.remotePubSet {
-		return nil, errors.New("noise: no remote static key given")
-	}
-	return c.remotePub[:], nil
+	return c.hs.rs.PublicKey[:], nil
 }
 
 //
