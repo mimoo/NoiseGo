@@ -239,12 +239,13 @@ func (c *Conn) Handshake() error {
 	var remoteKeyPair *KeyPair
 	if c.config.RemoteKey != nil {
 		if len(c.config.RemoteKey) != 32 {
-			return errors.New("Noise: the provided remote key is not 32-byte.")
+			return errors.New("noise: the provided remote key is not 32-byte")
 		}
 		remoteKeyPair = &KeyPair{}
 		copy(remoteKeyPair.PublicKey[:], c.config.RemoteKey)
 	}
-	hs := initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, nil, remoteKeyPair, nil)
+	c.hs = initialize(c.config.HandshakePattern, c.isClient, c.config.Prologue, c.config.KeyPair, nil, remoteKeyPair, nil)
+	hs := &c.hs
 
 	// pre-shared key
 	hs.psk = c.config.PreSharedKey
@@ -340,7 +341,6 @@ ContinueHandshake:
 	// TODO: preserve c.hs.symmetricState.h
 	// At that point the HandshakeState should be deleted except for the hash value h, which may be used for post-handshake channel binding (see Section 11.2).
 	c.hs.clear()
-
 	// no errors :)
 	c.handshakeComplete = true
 	return nil
@@ -349,6 +349,15 @@ ContinueHandshake:
 // IsRemoteAuthenticated can be used to check if the remote peer has been properly authenticated. It serves no real purpose for the moment as the handshake will not go through if a peer is not properly authenticated in patterns where the peer needs to be authenticated.
 func (c *Conn) IsRemoteAuthenticated() bool {
 	return c.isRemoteAuthenticated
+}
+
+// StaticKey returns the static key of the remote peer. It is useful in case the
+// static key is only transmitted during the handshake.
+func (c *Conn) StaticKey() ([]byte, error) {
+	if !c.handshakeComplete {
+		return nil, errors.New("noise: handshake not completed")
+	}
+	return c.hs.rs.PublicKey[:], nil
 }
 
 //

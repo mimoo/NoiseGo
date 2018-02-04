@@ -232,7 +232,6 @@ type handshakeState struct {
 // * s, e, rs, re are the local and remote static/ephemeral key pairs to be set (if they exist)
 // the function returns a handshakeState object.
 func initialize(handshakeType noiseHandshakeType, initiator bool, prologue []byte, s, e, rs, re *KeyPair) (h handshakeState) {
-
 	handshakePattern, ok := patterns[handshakeType]
 	if !ok {
 		panic("Noise: the supplied handshakePattern does not exist")
@@ -499,8 +498,5 @@ func (h *handshakeState) clear() {
 func (kp *KeyPair) clear() {
 	for i := 0; i < len(kp.PrivateKey); i++ {
 		kp.PrivateKey[i] = 0
-	}
-	for i := 0; i < len(kp.PublicKey); i++ {
-		kp.PublicKey[i] = 0
 	}
 }
